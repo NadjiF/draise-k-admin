@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      # Valeurs lues dans le fichier .env ; « :? » arrête le démarrage si l'une manque.
+      POSTGRES_USER: ${POSTGRES_USER:?Variable POSTGRES_USER manquante dans .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Variable POSTGRES_PASSWORD manquante dans .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Variable POSTGRES_DB manquante dans .env}
+    ports:
+      # Accessible uniquement depuis la machine locale
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Données conservées entre deux redémarrages
+      - db-data:/var/lib/postgresql
+      # Exécuté une seule fois, au premier démarrage (volume vide)
+      - ./api/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

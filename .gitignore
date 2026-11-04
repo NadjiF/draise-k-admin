@@ -1,0 +1,12 @@
+# Secrets : seul .env.example est commité
+.env
+.env.*
+!.env.example
+
+# Dépendances et fichiers générés
+node_modules/
+dist/
+coverage/
+
+# Journaux
+*.log

@@ -14,6 +14,15 @@ Interface d'administration du catalogue de La Draise-K (boutique de démonstrati
 - Données : même modèle que La Draise-K (id, nom, catégorie, prixCentimes, compatibilités, description), le catalogue actuel servant de données initiales.
 - Erreurs claires et en français, dans l'API et l'interface.
 
+### Choix techniques
+- Structure : api/, admin/ et docker-compose.yml à la racine, un package.json par dossier.
+- Base : PostgreSQL dans Docker Compose, initialisée par un seul fichier api/db/init.sql (création de la table et insertion du catalogue de La Draise-K), exécuté par PostgreSQL au premier démarrage du conteneur. Pas d'outil de migration ni de dossiers migrations/ ou seeds/ en V1.
+- API : Express + TypeScript, bibliothèque pg (SQL écrit à la main), validation avec zod, tests avec Vitest et supertest.
+- Authentification : un seul administrateur, identifiant et mot de passe haché dans les variables d'environnement. Aucun administrateur en base.
+- Angular : sans bibliothèque de composants, palette de La Draise-K.
+- Identifiants de la base dans un fichier .env non commité, avec un .env.example commité.
+- Sources du catalogue initial : /mnt/c/Users/Utilisateur/dev/draise-k/data/pieces.json (données) et /mnt/c/Users/Utilisateur/dev/draise-k/types/piece.ts (type Piece).
+
 ### Hors V1
 La Draise-K qui lit le catalogue depuis l'API, plusieurs comptes ou rôles, envoi d'images, OAuth, Storybook.
 
