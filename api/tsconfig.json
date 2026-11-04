@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    // Node exécute les .ts lui-même : TypeScript ne sert qu'à vérifier les types.
+    "noEmit": true,
+    "target": "esnext",
+    "module": "nodenext",
+    "types": ["node"],
+
+    // Compatibilité avec l'exécution directe par Node
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+
+    // Vérifications strictes
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
