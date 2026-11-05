@@ -21,5 +21,28 @@ services:
       timeout: 3s
       retries: 10
 
+  # Base réservée aux tests de l'API (npm test), séparée de la base de développement.
+  # Lancement : docker compose up -d db-test
+  db-test:
+    image: postgres:18
+    # Le profil « test » évite qu'elle démarre avec un simple « docker compose up ».
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Variable POSTGRES_USER manquante dans .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Variable POSTGRES_PASSWORD manquante dans .env}
+      # Nom fixe : les tests refusent de tourner sur une base dont le nom ne finit pas par _test.
+      POSTGRES_DB: draisek_admin_test
+    ports:
+      - "127.0.0.1:${POSTGRES_TEST_PORT:-5433}:5432"
+    # Données en mémoire : rien à conserver, et plus rapide. La table est créée
+    # par les tests eux-mêmes, qui réexécutent api/db/init.sql avant chaque test.
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d draisek_admin_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
 volumes:
   db-data:
