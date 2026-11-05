@@ -3,7 +3,7 @@
 // si l'une change, l'autre doit changer aussi.
 
 import { z } from "zod";
-import { detailsDepuisZod, ErreurApi } from "../erreurs.ts";
+import { validerAvecZod } from "../erreurs.ts";
 import type { Piece } from "./piece.ts";
 
 // Plus grand nombre accepté par une colonne integer de PostgreSQL.
@@ -128,24 +128,9 @@ export const schemaPiece = z.strictObject({
 // Vérifie des données reçues et renvoie la pièce validée (nom sans espaces autour).
 // Lance une ErreurApi 400 si les données ne conviennent pas.
 export function validerPiece(donnees: unknown): Piece {
-  const resultat = schemaPiece.safeParse(donnees);
-  if (resultat.success) {
-    return resultat.data;
-  }
-
-  // Le corps entier n'est pas un objet (tableau, texte, corps absent…)
-  const surLeCorps = resultat.error.issues.find(
-    (probleme) => probleme.path.length === 0 && probleme.code === "invalid_type",
+  return validerAvecZod(
+    schemaPiece,
+    donnees,
+    "Le corps de la requête doit être un objet JSON décrivant une pièce.",
   );
-  if (surLeCorps !== undefined) {
-    throw new ErreurApi(400, "Le corps de la requête doit être un objet JSON décrivant une pièce.");
-  }
-
-  const details = detailsDepuisZod(resultat.error.issues);
-  const nombreDeChamps = new Set(details.map((detail) => detail.champ)).size;
-  const message =
-    nombreDeChamps === 1
-      ? "Données invalides : 1 champ à corriger."
-      : `Données invalides : ${nombreDeChamps} champs à corriger.`;
-  throw new ErreurApi(400, message, details);
 }

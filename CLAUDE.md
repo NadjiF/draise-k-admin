@@ -23,6 +23,11 @@ Interface d'administration du catalogue de La Draise-K (boutique de démonstrati
 - Identifiants de la base dans un fichier .env non commité, avec un .env.example commité.
 - Sources du catalogue initial : /mnt/c/Users/Utilisateur/dev/draise-k/data/pieces.json (données) et /mnt/c/Users/Utilisateur/dev/draise-k/types/piece.ts (type Piece).
 
+- Limite des tentatives de connexion : express-rate-limit, 5 échecs par adresse IP en 15 minutes, compteurs en mémoire (api/src/auth/limite-connexion.ts).
+
+### À faire à la mise en ligne
+- Régler `trust proxy` d'Express (`app.set("trust proxy", …)` dans api/src/app.ts) selon l'hébergeur. Derrière un proxy, sans ce réglage, toutes les requêtes semblent venir de l'adresse IP du proxy : la limite de tentatives de connexion bloquerait alors tout le monde à la fois.
+
 ### Hors V1
 La Draise-K qui lit le catalogue depuis l'API, plusieurs comptes ou rôles, envoi d'images, OAuth, Storybook.
 

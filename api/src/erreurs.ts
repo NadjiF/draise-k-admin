@@ -56,6 +56,36 @@ export function detailsDepuisZod(problemes: readonly z.core.$ZodIssue[]): Detail
   return details;
 }
 
+// Vérifie des données reçues avec un schéma zod et renvoie le résultat validé.
+// Lance une ErreurApi 400, au format commun, si les données ne conviennent pas.
+// messageCorpsInvalide : message quand le corps entier n'est pas un objet.
+export function validerAvecZod<Schema extends z.ZodType>(
+  schema: Schema,
+  donnees: unknown,
+  messageCorpsInvalide: string,
+): z.output<Schema> {
+  const resultat = schema.safeParse(donnees);
+  if (resultat.success) {
+    return resultat.data;
+  }
+
+  // Le corps entier n'est pas un objet (tableau, texte, corps absent…)
+  const surLeCorps = resultat.error.issues.find(
+    (probleme) => probleme.path.length === 0 && probleme.code === "invalid_type",
+  );
+  if (surLeCorps !== undefined) {
+    throw new ErreurApi(400, messageCorpsInvalide);
+  }
+
+  const details = detailsDepuisZod(resultat.error.issues);
+  const nombreDeChamps = new Set(details.map((detail) => detail.champ)).size;
+  const message =
+    nombreDeChamps === 1
+      ? "Données invalides : 1 champ à corriger."
+      : `Données invalides : ${nombreDeChamps} champs à corriger.`;
+  throw new ErreurApi(400, message, details);
+}
+
 // Vrai si express.json() n'a pas pu lire le corps de la requête (JSON mal formé).
 export function estJsonMalForme(erreur: unknown): boolean {
   return (

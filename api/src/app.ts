@@ -2,6 +2,7 @@
 // Les tests pourront ainsi l'utiliser sans ouvrir de port réseau.
 
 import express, { type ErrorRequestHandler } from "express";
+import { authRouter } from "./auth/auth.routes.ts";
 import { ErreurApi, estJsonMalForme } from "./erreurs.ts";
 import { piecesRouter } from "./pieces/pieces.routes.ts";
 
@@ -10,6 +11,7 @@ export const app = express();
 // Lit les corps JSON (en-tête Content-Type: application/json) dans requete.body.
 app.use(express.json());
 
+app.use("/api/auth", authRouter);
 app.use("/api/pieces", piecesRouter);
 
 // Aucune route ne correspond
