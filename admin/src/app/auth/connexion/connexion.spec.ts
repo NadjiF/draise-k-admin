@@ -62,6 +62,10 @@ describe('Connexion', () => {
     expect(page.querySelector('[role="alert"]')).toBeNull();
   });
 
+  it("place le focus sur le champ Identifiant à l'arrivée sur la page", () => {
+    expect(document.activeElement).toBe(champ('identifiant'));
+  });
+
   it('affiche « obligatoire » quand on quitte un champ vide', async () => {
     champ('identifiant').dispatchEvent(new Event('blur'));
     await fixture.whenStable();

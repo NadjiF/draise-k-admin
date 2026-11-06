@@ -13,6 +13,10 @@ export interface Session {
 // valide  : connecté
 export type EtatSession = 'absente' | 'expiree' | 'valide';
 
+// Adresse de connexion de l'API. Exportée pour l'intercepteur des sessions expirées :
+// sur cette requête, une 401 signifie « identifiants incorrects » et non « session expirée ».
+export const URL_CONNEXION = '/api/auth/connexion';
+
 // Clé utilisée dans sessionStorage.
 export const CLE_SESSION = 'draise-k-admin.session';
 
@@ -34,7 +38,7 @@ export class AuthService {
   // En cas d'échec (401, 429…), l'erreur est transmise telle quelle à l'abonné :
   // c'est la page de connexion qui affichera le message.
   connexion(identifiant: string, motDePasse: string): Observable<void> {
-    return this.http.post<Session>('/api/auth/connexion', { identifiant, motDePasse }).pipe(
+    return this.http.post<Session>(URL_CONNEXION, { identifiant, motDePasse }).pipe(
       tap((session) => this.enregistrer(session)),
       map(() => undefined), // l'appelant n'a pas besoin du jeton
     );

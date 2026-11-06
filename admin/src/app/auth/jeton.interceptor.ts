@@ -26,6 +26,7 @@ export const jetonInterceptor: HttpInterceptorFn = (requete, suivant) => {
 
 // Nos services appellent l'API par une URL relative qui commence par /api/
 // (transmise au port 3000 par proxy.conf.json en développement).
-function estRequeteApi(url: string): boolean {
+// Exportée : l'intercepteur des sessions expirées s'en sert aussi.
+export function estRequeteApi(url: string): boolean {
   return url.startsWith('/api/');
 }

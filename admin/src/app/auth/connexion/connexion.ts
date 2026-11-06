@@ -1,4 +1,12 @@
-import { Component, ElementRef, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { messageErreur } from '../../erreurs';
@@ -23,6 +31,13 @@ export class Connexion {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef); // la balise <app-connexion>
+
+  constructor() {
+    // Focus sur le champ Identifiant à l'arrivée sur la page.
+    // Dans le constructeur, le HTML du composant n'existe pas encore : afterNextRender attend
+    // qu'Angular l'ait affiché une première fois, puis exécute la fonction (une seule fois).
+    afterNextRender(() => this.champ('identifiant')?.focus());
+  }
 
   // Le modèle du formulaire, décrit en TypeScript.
   // nonNullable : reset() remet '' et non null, donc la valeur est typée string (et non string | null).
@@ -50,6 +65,11 @@ export class Connexion {
     return controle.invalid && controle.touched;
   }
 
+  // Le champ <input> de la page qui porte l'id donné (les id sont les noms des champs).
+  private champ(nom: Champ): HTMLInputElement | null {
+    return this.hote.nativeElement.querySelector<HTMLInputElement>(`#${nom}`);
+  }
+
   protected envoyer(): void {
     if (this.envoiEnCours()) return; // évite un double envoi (touche Entrée répétée)
 
@@ -57,7 +77,7 @@ export class Connexion {
       // Affiche tous les messages, puis place le focus sur le premier champ à corriger.
       this.formulaire.markAllAsTouched();
       const premier = CHAMPS.find((champ) => this.formulaire.controls[champ].invalid);
-      this.hote.nativeElement.querySelector<HTMLInputElement>(`#${premier}`)?.focus();
+      if (premier !== undefined) this.champ(premier)?.focus();
       return;
     }
 
