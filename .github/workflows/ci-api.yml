@@ -1,0 +1,76 @@
+# Intégration continue de l'API : typecheck, lint et tests à chaque push et pull request.
+name: CI API
+
+on:
+  push:
+  pull_request:
+
+# Le workflow n'a besoin que de lire le dépôt.
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Toutes les commandes « run » s'exécutent dans api/
+    defaults:
+      run:
+        working-directory: api
+
+    # Équivalent du service db-test de docker-compose.yml. GitHub le démarre avant
+    # la première étape et attend que son healthcheck réponde. La table n'est pas
+    # créée ici : les tests réexécutent api/db/init.sql avant chaque test.
+    services:
+      db-test:
+        image: postgres:18
+        env:
+          POSTGRES_USER: draisek
+          # Valeur de test : la base n'existe que pendant le job et n'est
+          # joignable que depuis la machine de la CI.
+          POSTGRES_PASSWORD: mot-de-passe-de-test
+          # Nom imposé : les tests refusent une base dont le nom ne finit pas par _test.
+          POSTGRES_DB: draisek_admin_test
+        ports:
+          - 5433:5432
+        # Options passées à Docker : healthcheck et données en mémoire, comme db-test
+        options: >-
+          --health-cmd "pg_isready -U draisek -d draisek_admin_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+          --tmpfs /var/lib/postgresql
+
+    # Variables lues par vitest.config.ts et config.ts (pas de fichier .env en CI).
+    # Identifiant admin, hash et JWT_SECRET : valeurs de test imposées par vitest.config.ts.
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_TEST_PORT: 5433
+      POSTGRES_USER: draisek
+      POSTGRES_PASSWORD: mot-de-passe-de-test
+
+    steps:
+      - name: Récupération du dépôt
+        uses: actions/checkout@v7
+
+      - name: Installation de Node.js
+        uses: actions/setup-node@v7
+        with:
+          # Même version que sur le poste de développement (nvm use)
+          node-version-file: .nvmrc
+          # Garde le cache npm d'une exécution à l'autre
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      - name: Vérification des types
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
