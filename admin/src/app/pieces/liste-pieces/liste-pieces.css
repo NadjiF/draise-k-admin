@@ -1,0 +1,33 @@
+/* Mise en page minimale ; les couleurs de La Draise-K viendront à l'étape 6. */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+caption {
+  text-align: left;
+  padding-block: 0.5rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid currentColor;
+}
+
+tbody th {
+  font-weight: normal;
+}
+
+/* Prix alignés à droite, chiffres de même largeur pour que les virgules s'alignent. */
+.prix {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.erreur {
+  font-weight: bold;
+}
