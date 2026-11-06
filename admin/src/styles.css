@@ -1,1 +1,44 @@
-/* You can add global styles to this file, and also import other style files */
+/* Styles globaux : ils s'appliquent à toute l'application.
+   Les styles propres à un composant sont dans son fichier .css. */
+
+/* Palette de La Draise-K, reprise de draise-k/app/globals.css (mêmes noms, mêmes valeurs).
+   light-dark(clair, sombre) : le navigateur choisit selon color-scheme ci-dessous.
+   Le cuivre ne sert qu'aux encadrements, jamais au texte. */
+:root {
+  --fond: light-dark(#faf7f2, #181513);
+  --surface: light-dark(#fffdf9, #211d1a);
+  --surface-alt: light-dark(#f1ece4, #2b2622);
+  --texte: light-dark(#2a2521, #eee8e1);
+  --texte-doux: light-dark(#665d54, #aba196);
+  --primaire: light-dark(#1b4f5c, #7dbfce);
+  --primaire-survol: light-dark(#143d47, #9dd0dc);
+  --sur-primaire: light-dark(#ffffff, #0f2930);
+  --entete: light-dark(#1b4f5c, #12343d);
+  --sur-entete: light-dark(#ffffff, #eee8e1);
+  --cuivre: light-dark(#b87333, #c98b52);
+  --erreur: light-dark(#9e2f1e, #f0a898);
+  --erreur-fond: light-dark(#fbece8, #3a201a);
+
+  /* Thème clair ou sombre selon le réglage du système (pas de bouton de thème en V1).
+     Les contrôles natifs (<select>, barres de défilement) suivent aussi. */
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+/* Contour visible seulement à la navigation au clavier. */
+:focus-visible {
+  outline: 2px solid var(--primaire);
+  outline-offset: 2px;
+}
+
+/* Les contrôles de formulaire n'héritent pas de la police par défaut. */
+select {
+  font: inherit;
+}

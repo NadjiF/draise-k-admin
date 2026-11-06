@@ -1,4 +1,11 @@
-/* Mise en page minimale ; les couleurs de La Draise-K viendront à l'étape 6. */
+/* Couleurs : variables de la palette, définies dans src/styles.css. */
+
+h1 {
+  margin-top: 0;
+  color: var(--primaire);
+  font-size: 1.875rem;
+  font-weight: 600;
+}
 
 .filtre {
   display: flex;
@@ -7,9 +14,25 @@
   gap: 0.5rem;
 }
 
+select {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--texte-doux);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  color: var(--texte);
+}
+
+/* Résumé (« 3 pièces affichées ») et légende du tableau : texte secondaire. */
+[role='status'],
+caption {
+  color: var(--texte-doux);
+}
+
 table {
   border-collapse: collapse;
   width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--cuivre);
 }
 
 caption {
@@ -21,7 +44,11 @@ th,
 td {
   text-align: left;
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid currentColor;
+  border-bottom: 1px solid var(--surface-alt);
+}
+
+thead th {
+  background: var(--surface-alt);
 }
 
 tbody th {
@@ -35,6 +62,11 @@ tbody th {
   white-space: nowrap;
 }
 
+/* Comme le message d'erreur de La Draise-K (app/assistant/message-erreur.tsx). */
 .erreur {
-  font-weight: bold;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--erreur) 30%, transparent);
+  border-radius: 0.5rem;
+  background: var(--erreur-fond);
+  color: var(--erreur);
 }

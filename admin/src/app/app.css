@@ -1,0 +1,33 @@
+/* Bandeau aux couleurs de l'en-tête de La Draise-K, filet cuivre en bas. */
+header {
+  background: var(--entete);
+  color: var(--sur-entete);
+  border-bottom: 2px solid var(--cuivre);
+}
+
+/* Même largeur de contenu que la boutique (64rem), centrée. */
+header,
+main {
+  padding-inline: 1rem;
+}
+
+.marque,
+main {
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.marque {
+  margin-block: 0;
+  padding-block: 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.sous-titre {
+  font-weight: normal;
+}
+
+main {
+  padding-block: 2rem;
+}
