@@ -151,6 +151,11 @@ describe("validerPiece : critères de compatibilité", () => {
       "Taille de roue inconnue : « 28 ». Valeurs possibles : 20, 24, 26, 27.5, 29, 700c.",
     ],
     [
+      "taillesRoue",
+      [{ taille: "29" }],
+      'Taille de roue inconnue : « {"taille":"29"} ». Valeurs possibles : 20, 24, 26, 27.5, 29, 700c.',
+    ],
+    [
       "typesFrein",
       ["tambour"],
       "Type de frein inconnu : « tambour ». Valeurs possibles : v-brake, etrier, disque-mecanique, disque-hydraulique.",

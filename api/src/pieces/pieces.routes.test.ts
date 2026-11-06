@@ -6,6 +6,7 @@ import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { app } from "../app.ts";
 import { creerJeton } from "../auth/jeton.ts";
+import type { CorpsErreur } from "../erreurs.ts";
 import { fermerBase, reinitialiserBase } from "../tests/base-de-test.ts";
 import type { Piece } from "./piece.ts";
 import { validerPiece } from "./piece.schema.ts";
@@ -29,7 +30,7 @@ describe("GET /api/pieces", () => {
 
   it("renvoie chaque pièce au format de La Draise-K", async () => {
     const reponse = await request(app).get("/api/pieces");
-    const pieces: Piece[] = reponse.body;
+    const pieces = reponse.body as Piece[];
 
     // Critère NULL en base = critère absent (pas de clé taillesRoue ni typesFrein)
     expect(pieces.find((piece) => piece.id === "chaine-11v")).toEqual({
@@ -90,7 +91,7 @@ const chaine11v: Piece = {
 
 async function nombreDePieces(): Promise<number> {
   const reponse = await request(app).get("/api/pieces");
-  return reponse.body.length;
+  return (reponse.body as Piece[]).length;
 }
 
 describe("GET /api/pieces/:id", () => {
@@ -198,7 +199,7 @@ describe("PUT /api/pieces/:id", () => {
       .send({ ...chaine11v, compatibilites: {} });
 
     const relue = await request(app).get("/api/pieces/chaine-11v");
-    expect(relue.body.compatibilites).toEqual({});
+    expect((relue.body as Piece).compatibilites).toEqual({});
   });
 
   it("renvoie 400 si l'id du corps diffère de celui de l'URL, sans rien modifier", async () => {
@@ -222,7 +223,7 @@ describe("PUT /api/pieces/:id", () => {
       .send({ ...chaine11v, nom: " ", categorie: "selles" });
 
     expect(reponse.status).toBe(400);
-    expect(reponse.body.erreur).toBe("Données invalides : 2 champs à corriger.");
+    expect((reponse.body as CorpsErreur).erreur).toBe("Données invalides : 2 champs à corriger.");
     const relue = await request(app).get("/api/pieces/chaine-11v");
     expect(relue.body).toEqual(chaine11v);
   });

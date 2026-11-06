@@ -25,6 +25,8 @@ export async function reinitialiserBase(): Promise<void> {
     if ((erreur as { code?: string }).code === "ECONNREFUSED") {
       throw new Error(
         `Base de test injoignable sur ${config.db.host}:${config.db.port}. Lancez-la avec : docker compose up -d db-test`,
+        // L'erreur d'origine reste attachée, pour le diagnostic.
+        { cause: erreur },
       );
     }
     throw erreur;

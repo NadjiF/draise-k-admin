@@ -11,6 +11,7 @@
     "dev": "node --watch --env-file=../.env src/server.ts",
     "start": "node --env-file=../.env src/server.ts",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run",
     "hash-mot-de-passe": "node scripts/hash-mot-de-passe.ts"
   },
@@ -23,12 +24,15 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
+    "eslint": "^10.14.0",
     "supertest": "^7.3.1",
     "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
   }
 }

@@ -5,7 +5,7 @@ import { base64url, decodeJwt, SignJWT } from "jose";
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { app } from "../app.ts";
-import { creerJeton } from "../auth/jeton.ts";
+import { creerJeton, type JetonEmis } from "../auth/jeton.ts";
 import { fermerBase, reinitialiserBase } from "../tests/base-de-test.ts";
 import {
   IDENTIFIANT_TEST,
@@ -77,7 +77,7 @@ const MESSAGE_INVALIDE = "Jeton invalide. Reconnectez-vous.";
 const MESSAGE_EXPIRE = "Session expirée. Reconnectez-vous.";
 
 async function catalogue(): Promise<Piece[]> {
-  return (await request(app).get("/api/pieces")).body;
+  return (await request(app).get("/api/pieces")).body as Piece[];
 }
 
 describe.each(routesProtegees)("$methode $url", ({ methode, url, corps, succes }) => {
@@ -171,7 +171,7 @@ describe("Parcours complet", () => {
 
     const creation = await request(app)
       .post("/api/pieces")
-      .set("Authorization", `Bearer ${connexion.body.jeton}`)
+      .set("Authorization", `Bearer ${(connexion.body as JetonEmis).jeton}`)
       .send(nouvellePiece);
 
     expect(creation.status).toBe(201);

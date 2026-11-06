@@ -36,7 +36,14 @@ function siValeurInconnue(libelleInconnu: string, valeurs: readonly string[], ob
   return (probleme: { input?: unknown }) =>
     probleme.input === undefined
       ? obligatoire
-      : `${libelleInconnu} : « ${String(probleme.input)} ». Valeurs possibles : ${valeurs.join(", ")}.`;
+      : `${libelleInconnu} : « ${enTexte(probleme.input)} ». Valeurs possibles : ${valeurs.join(", ")}.`;
+}
+
+// Écrit la valeur reçue dans un message. Un texte est cité tel quel ; le reste
+// (nombre, objet, null…) passe par JSON.stringify, car String({}) donnerait
+// « [object Object] ».
+function enTexte(valeur: unknown): string {
+  return typeof valeur === "string" ? valeur : JSON.stringify(valeur);
 }
 
 const schemaCompatibilites = z.strictObject(

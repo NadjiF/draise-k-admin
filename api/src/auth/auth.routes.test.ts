@@ -5,11 +5,13 @@ import { decodeJwt, decodeProtectedHeader, jwtVerify } from "jose";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { app } from "../app.ts";
+import type { CorpsErreur } from "../erreurs.ts";
 import {
   IDENTIFIANT_TEST,
   JWT_SECRET_TEST,
   MOT_DE_PASSE_TEST,
 } from "../tests/valeurs-de-test.ts";
+import type { JetonEmis } from "./jeton.ts";
 import { magasinTentatives } from "./limite-connexion.ts";
 
 const bonsIdentifiants = { identifiant: IDENTIFIANT_TEST, motDePasse: MOT_DE_PASSE_TEST };
@@ -29,7 +31,7 @@ describe("POST /api/auth/connexion", () => {
     const reponse = await seConnecter(bonsIdentifiants);
 
     expect(reponse.status).toBe(200);
-    const { jeton, expiration } = reponse.body;
+    const { jeton, expiration } = reponse.body as JetonEmis;
 
     // Signé en HS256 avec le secret de l'API
     expect(decodeProtectedHeader(jeton)).toEqual({ alg: "HS256" });
@@ -133,7 +135,7 @@ describe("Limite de tentatives de connexion", () => {
     vi.setSystemTime(Date.now() + 14 * 60 * 1000); // 14 minutes plus tard
     const encoreBloquee = await seConnecter(bonsIdentifiants);
     expect(encoreBloquee.status).toBe(429);
-    expect(encoreBloquee.body.erreur).toBe(
+    expect((encoreBloquee.body as CorpsErreur).erreur).toBe(
       "Trop de tentatives de connexion. Réessayez dans 1 minute.",
     );
 
