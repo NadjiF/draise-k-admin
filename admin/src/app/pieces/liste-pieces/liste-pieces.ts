@@ -1,9 +1,13 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
+import { messageErreur } from '../../erreurs';
 import { CATEGORIES, Categorie, estCategorie, LIBELLES_CATEGORIES, Piece } from '../piece';
 import { PiecesService } from '../pieces.service';
 
 const formatPrix = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+
+// Message affiché si l'API ne renvoie pas son propre message (API arrêtée, réseau coupé…).
+const MESSAGE_API_INJOIGNABLE =
+  "Impossible de joindre l'API. Vérifiez qu'elle est démarrée, puis rechargez la page.";
 
 @Component({
   imports: [],
@@ -45,7 +49,7 @@ export class ListePieces {
         this.chargement.set(false);
       },
       error: (erreur: unknown) => {
-        this.erreur.set(messageErreur(erreur));
+        this.erreur.set(messageErreur(erreur, MESSAGE_API_INJOIGNABLE));
         this.chargement.set(false);
       },
     });
@@ -59,18 +63,4 @@ export class ListePieces {
   protected prix(centimes: number): string {
     return formatPrix.format(centimes / 100);
   }
-}
-
-// Notre API renvoie ses erreurs en JSON, avec un message en français : { "erreur": "..." }.
-// Sinon (API arrêtée, réseau coupé…), il n'y a pas de message utilisable : on donne le nôtre.
-function messageErreur(erreur: unknown): string {
-  if (
-    erreur instanceof HttpErrorResponse &&
-    typeof erreur.error === 'object' &&
-    erreur.error !== null &&
-    typeof erreur.error.erreur === 'string'
-  ) {
-    return erreur.error.erreur;
-  }
-  return "Impossible de joindre l'API. Vérifiez qu'elle est démarrée, puis rechargez la page.";
 }

@@ -1,0 +1,45 @@
+<h1>Connexion</h1>
+
+<!-- [formGroup] relie la balise <form> au FormGroup de la classe.
+     (ngSubmit) : appelé à l'envoi (bouton ou touche Entrée), sans recharger la page. -->
+<form [formGroup]="formulaire" (ngSubmit)="envoyer()">
+  @if (erreurApi()) {
+    <p role="alert" class="erreur">{{ erreurApi() }}</p>
+  }
+
+  <div class="champ">
+    <label for="identifiant">Identifiant</label>
+    <!-- formControlName relie ce champ au FormControl « identifiant ».
+         aria-invalid et aria-describedby : le lecteur d'écran annonce l'erreur avec le champ. -->
+    <input
+      id="identifiant"
+      type="text"
+      formControlName="identifiant"
+      autocomplete="username"
+      [attr.aria-invalid]="afficherErreur('identifiant')"
+      [attr.aria-describedby]="afficherErreur('identifiant') ? 'identifiant-erreur' : null"
+    />
+    @if (afficherErreur('identifiant')) {
+      <p id="identifiant-erreur" class="message-champ">L'identifiant est obligatoire.</p>
+    }
+  </div>
+
+  <div class="champ">
+    <label for="motDePasse">Mot de passe</label>
+    <input
+      id="motDePasse"
+      type="password"
+      formControlName="motDePasse"
+      autocomplete="current-password"
+      [attr.aria-invalid]="afficherErreur('motDePasse')"
+      [attr.aria-describedby]="afficherErreur('motDePasse') ? 'motDePasse-erreur' : null"
+    />
+    @if (afficherErreur('motDePasse')) {
+      <p id="motDePasse-erreur" class="message-champ">Le mot de passe est obligatoire.</p>
+    }
+  </div>
+
+  <button type="submit" [disabled]="envoiEnCours()">
+    {{ envoiEnCours() ? 'Connexion en cours…' : 'Se connecter' }}
+  </button>
+</form>

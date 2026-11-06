@@ -39,6 +39,8 @@ body {
 }
 
 /* Les contrôles de formulaire n'héritent pas de la police par défaut. */
-select {
+select,
+input,
+button {
   font: inherit;
 }
