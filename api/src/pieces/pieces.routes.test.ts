@@ -1,11 +1,19 @@
 // Tests HTTP des routes /api/pieces, sur la vraie base de test.
+// Ici, l'administrateur est toujours connecté : les refus faute de jeton
+// sont testés dans pieces.protection.test.ts.
 
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { app } from "../app.ts";
+import { creerJeton } from "../auth/jeton.ts";
 import { fermerBase, reinitialiserBase } from "../tests/base-de-test.ts";
 import type { Piece } from "./piece.ts";
 import { validerPiece } from "./piece.schema.ts";
+
+// Un agent supertest garde ses réglages pour toutes ses requêtes :
+// celui-ci envoie un jeton valide dans l'en-tête Authorization.
+const { jeton } = await creerJeton();
+const admin = request.agent(app).set("Authorization", `Bearer ${jeton}`);
 
 beforeEach(reinitialiserBase);
 afterAll(fermerBase);
@@ -103,7 +111,7 @@ describe("GET /api/pieces/:id", () => {
 
 describe("POST /api/pieces", () => {
   it("crée la pièce, la renvoie avec le code 201 et l'enregistre en base", async () => {
-    const reponse = await request(app).post("/api/pieces").send(nouvellePiece());
+    const reponse = await admin.post("/api/pieces").send(nouvellePiece());
 
     expect(reponse.status).toBe(201);
     expect(reponse.body).toEqual(nouvellePiece());
@@ -115,14 +123,14 @@ describe("POST /api/pieces", () => {
 
   it("enregistre une pièce sans critère de compatibilité et le nom sans espaces autour", async () => {
     const piece = { ...nouvellePiece(), nom: "  Jante 29  ", compatibilites: {} };
-    await request(app).post("/api/pieces").send(piece);
+    await admin.post("/api/pieces").send(piece);
 
     const relue = await request(app).get("/api/pieces/jante-29-disque");
     expect(relue.body).toEqual({ ...piece, nom: "Jante 29" });
   });
 
   it("renvoie 409 si l'identifiant existe déjà, sans modifier la pièce existante", async () => {
-    const reponse = await request(app)
+    const reponse = await admin
       .post("/api/pieces")
       .send({ ...nouvellePiece(), id: "chaine-11v" });
 
@@ -136,7 +144,7 @@ describe("POST /api/pieces", () => {
   });
 
   it("renvoie 400 avec le détail des champs si les données sont invalides, sans rien créer", async () => {
-    const reponse = await request(app)
+    const reponse = await admin
       .post("/api/pieces")
       .send({ ...nouvellePiece(), prixCentimes: 0 });
 
@@ -149,7 +157,7 @@ describe("POST /api/pieces", () => {
   });
 
   it("renvoie 400 si le corps n'est pas un JSON valide", async () => {
-    const reponse = await request(app)
+    const reponse = await admin
       .post("/api/pieces")
       .set("Content-Type", "application/json")
       .send('{"id": "jante-29"');
@@ -159,7 +167,7 @@ describe("POST /api/pieces", () => {
   });
 
   it("renvoie 400 si la requête n'a pas de corps", async () => {
-    const reponse = await request(app).post("/api/pieces");
+    const reponse = await admin.post("/api/pieces");
 
     expect(reponse.status).toBe(400);
     expect(reponse.body).toEqual({
@@ -176,7 +184,7 @@ describe("PUT /api/pieces/:id", () => {
       prixCentimes: 3590,
       compatibilites: { vitesses: [11, 12] },
     };
-    const reponse = await request(app).put("/api/pieces/chaine-11v").send(modifiee);
+    const reponse = await admin.put("/api/pieces/chaine-11v").send(modifiee);
 
     expect(reponse.status).toBe(200);
     expect(reponse.body).toEqual(modifiee);
@@ -185,7 +193,7 @@ describe("PUT /api/pieces/:id", () => {
   });
 
   it("remplace toute la pièce : un critère absent du corps est retiré", async () => {
-    await request(app)
+    await admin
       .put("/api/pieces/chaine-11v")
       .send({ ...chaine11v, compatibilites: {} });
 
@@ -194,7 +202,7 @@ describe("PUT /api/pieces/:id", () => {
   });
 
   it("renvoie 400 si l'id du corps diffère de celui de l'URL, sans rien modifier", async () => {
-    const reponse = await request(app)
+    const reponse = await admin
       .put("/api/pieces/chaine-11v")
       .send({ ...chaine11v, id: "chaine-11v-pro" });
 
@@ -209,7 +217,7 @@ describe("PUT /api/pieces/:id", () => {
   });
 
   it("renvoie 400 si les données sont invalides, sans rien modifier", async () => {
-    const reponse = await request(app)
+    const reponse = await admin
       .put("/api/pieces/chaine-11v")
       .send({ ...chaine11v, nom: " ", categorie: "selles" });
 
@@ -220,7 +228,7 @@ describe("PUT /api/pieces/:id", () => {
   });
 
   it("renvoie 404 si la pièce n'existe pas, sans la créer", async () => {
-    const reponse = await request(app).put("/api/pieces/jante-29-disque").send(nouvellePiece());
+    const reponse = await admin.put("/api/pieces/jante-29-disque").send(nouvellePiece());
 
     expect(reponse.status).toBe(404);
     expect(reponse.body).toEqual({
@@ -232,7 +240,7 @@ describe("PUT /api/pieces/:id", () => {
 
 describe("DELETE /api/pieces/:id", () => {
   it("supprime la pièce et répond 204 sans corps", async () => {
-    const reponse = await request(app).delete("/api/pieces/chaine-11v");
+    const reponse = await admin.delete("/api/pieces/chaine-11v");
 
     expect(reponse.status).toBe(204);
     expect(reponse.text).toBe("");
@@ -241,7 +249,7 @@ describe("DELETE /api/pieces/:id", () => {
   });
 
   it("renvoie 404 si la pièce n'existe pas", async () => {
-    const reponse = await request(app).delete("/api/pieces/chaine-12v");
+    const reponse = await admin.delete("/api/pieces/chaine-12v");
 
     expect(reponse.status).toBe(404);
     expect(reponse.body).toEqual({ erreur: "Aucune pièce avec l'identifiant « chaine-12v »." });
@@ -249,8 +257,8 @@ describe("DELETE /api/pieces/:id", () => {
   });
 
   it("renvoie 404 si la pièce a déjà été supprimée", async () => {
-    await request(app).delete("/api/pieces/chaine-11v");
-    const reponse = await request(app).delete("/api/pieces/chaine-11v");
+    await admin.delete("/api/pieces/chaine-11v");
+    const reponse = await admin.delete("/api/pieces/chaine-11v");
 
     expect(reponse.status).toBe(404);
   });

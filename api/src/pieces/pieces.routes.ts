@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { exigerAdmin } from "../auth/exiger-admin.ts";
 import { ErreurApi } from "../erreurs.ts";
 import { validerPiece } from "./piece.schema.ts";
 import {
@@ -35,7 +36,7 @@ piecesRouter.get("/:id", async (requete, reponse) => {
 });
 
 // POST /api/pieces : création. L'id est choisi par l'administrateur.
-piecesRouter.post("/", async (requete, reponse) => {
+piecesRouter.post("/", exigerAdmin, async (requete, reponse) => {
   const piece = validerPiece(requete.body);
 
   const creee = await creerPiece(piece);
@@ -49,7 +50,7 @@ piecesRouter.post("/", async (requete, reponse) => {
 
 // PUT /api/pieces/:id : remplacement complet. Le corps contient la pièce entière,
 // id compris, et cet id doit être celui de l'URL.
-piecesRouter.put("/:id", async (requete, reponse) => {
+piecesRouter.put("/:id", exigerAdmin, async (requete, reponse) => {
   const piece = validerPiece(requete.body);
 
   if (piece.id !== requete.params.id) {
@@ -66,7 +67,7 @@ piecesRouter.put("/:id", async (requete, reponse) => {
 });
 
 // DELETE /api/pieces/:id : suppression. 204 = succès, sans corps de réponse.
-piecesRouter.delete("/:id", async (requete, reponse) => {
+piecesRouter.delete("/:id", exigerAdmin, async (requete, reponse) => {
   const supprimee = await supprimerPiece(requete.params.id);
   if (!supprimee) {
     throw pieceIntrouvable(requete.params.id);
