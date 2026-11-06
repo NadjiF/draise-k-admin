@@ -1,0 +1,76 @@
+/* Couleurs : variables de la palette, définies dans src/styles.css. */
+
+h1 {
+  margin-top: 0;
+  color: var(--primaire);
+  font-size: 1.875rem;
+  font-weight: 600;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 40rem;
+}
+
+/* Styles des champs (.champ) : communs, dans src/styles.css. */
+
+/* Prix : champ étroit suivi de « € ». */
+.avec-unite {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avec-unite input {
+  width: 10rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+button {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: var(--primaire);
+  color: var(--sur-primaire);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--primaire-survol);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+a {
+  color: var(--primaire);
+}
+
+/* Comme le message d'erreur de La Draise-K (app/assistant/message-erreur.tsx). */
+.erreur {
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--erreur) 30%, transparent);
+  border-radius: 0.5rem;
+  background: var(--erreur-fond);
+  color: var(--erreur);
+}
+
+.erreur p,
+.erreur ul {
+  margin: 0;
+}
+
+.erreur ul {
+  margin-top: 0.5rem;
+}

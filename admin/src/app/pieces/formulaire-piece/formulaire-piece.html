@@ -1,0 +1,116 @@
+<h1>Ajouter une pièce</h1>
+
+<!-- Les id des champs sont préfixés par « champ- » (un élément d'id « id » prêterait à confusion). -->
+<form [formGroup]="formulaire" (ngSubmit)="envoyer()">
+  @if (erreurGenerale(); as erreur) {
+    <div role="alert" class="erreur">
+      <p>{{ erreur }}</p>
+      @if (detailsNonPlaces().length > 0) {
+        <ul>
+          @for (detail of detailsNonPlaces(); track $index) {
+            <li>{{ detail }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <div class="champ">
+    <label for="champ-id">Identifiant</label>
+    <p id="champ-id-aide" class="aide">
+      Identifiant unique, utilisable dans une adresse web : minuscules sans accent, chiffres et
+      tirets (ex. chaine-11v). Il ne pourra plus être modifié.
+    </p>
+    <!-- spellcheck="false" : pas de soulignement des « fautes » dans un identifiant. -->
+    <input
+      id="champ-id"
+      type="text"
+      formControlName="id"
+      autocomplete="off"
+      spellcheck="false"
+      [attr.aria-invalid]="message('id') !== null"
+      [attr.aria-describedby]="descriptions('id')"
+    />
+    <!-- « as » donne un nom au résultat de message('id'), pour ne pas l'appeler deux fois. -->
+    @if (message('id'); as message) {
+      <p id="champ-id-erreur" class="message-champ">{{ message }}</p>
+    }
+  </div>
+
+  <div class="champ">
+    <label for="champ-nom">Nom</label>
+    <input
+      id="champ-nom"
+      type="text"
+      formControlName="nom"
+      autocomplete="off"
+      [attr.aria-invalid]="message('nom') !== null"
+      [attr.aria-describedby]="descriptions('nom')"
+    />
+    @if (message('nom'); as message) {
+      <p id="champ-nom-erreur" class="message-champ">{{ message }}</p>
+    }
+  </div>
+
+  <div class="champ">
+    <label for="champ-categorie">Catégorie</label>
+    <select
+      id="champ-categorie"
+      formControlName="categorie"
+      [attr.aria-invalid]="message('categorie') !== null"
+      [attr.aria-describedby]="descriptions('categorie')"
+    >
+      <option value="">Choisir une catégorie</option>
+      @for (categorie of categories; track categorie) {
+        <option [value]="categorie">{{ libellesCategories[categorie] }}</option>
+      }
+    </select>
+    @if (message('categorie'); as message) {
+      <p id="champ-categorie-erreur" class="message-champ">{{ message }}</p>
+    }
+  </div>
+
+  <div class="champ">
+    <label for="champ-prix">Prix TTC</label>
+    <p id="champ-prix-aide" class="aide">En euros, par exemple 12,90.</p>
+    <!-- type="text" et non "number" (voir pieces/prix.ts) ; inputmode="decimal" affiche
+         quand même le pavé numérique sur téléphone. Le « € » est décoratif : l'aide le dit déjà. -->
+    <div class="avec-unite">
+      <input
+        id="champ-prix"
+        type="text"
+        inputmode="decimal"
+        formControlName="prix"
+        autocomplete="off"
+        [attr.aria-invalid]="message('prix') !== null"
+        [attr.aria-describedby]="descriptions('prix')"
+      />
+      <span aria-hidden="true">€</span>
+    </div>
+    @if (message('prix'); as message) {
+      <p id="champ-prix-erreur" class="message-champ">{{ message }}</p>
+    }
+  </div>
+
+  <div class="champ">
+    <label for="champ-description">Description (facultative)</label>
+    <textarea
+      id="champ-description"
+      formControlName="description"
+      rows="4"
+      [attr.aria-invalid]="message('description') !== null"
+      [attr.aria-describedby]="descriptions('description')"
+    ></textarea>
+    @if (message('description'); as message) {
+      <p id="champ-description-erreur" class="message-champ">{{ message }}</p>
+    }
+  </div>
+
+  <div class="actions">
+    <button type="submit" [disabled]="envoiEnCours()">
+      {{ envoiEnCours() ? 'Enregistrement en cours…' : 'Enregistrer la pièce' }}
+    </button>
+    <!-- routerLink : lien géré par le routeur d'Angular, sans recharger la page. -->
+    <a routerLink="/">Annuler</a>
+  </div>
+</form>

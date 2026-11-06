@@ -38,9 +38,54 @@ body {
   outline-offset: 2px;
 }
 
+/* Champs de formulaire (pages de connexion et de pièce).
+   Chaque champ est un bloc .champ : libellé, aide éventuelle, champ, message d'erreur.
+   Les règles ne s'appliquent qu'à l'intérieur de .champ : le filtre de la liste des pièces,
+   qui n'est pas un champ de formulaire, garde son propre style. */
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.champ label {
+  font-weight: 600;
+}
+
+/* Texte d'aide sous le libellé, relié au champ par aria-describedby. */
+.champ .aide {
+  margin: 0;
+  color: var(--texte-doux);
+}
+
+.champ input,
+.champ select,
+.champ textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--texte-doux);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  color: var(--texte);
+}
+
+.champ textarea {
+  resize: vertical;
+}
+
+/* Champ en erreur : bordure plus épaisse en plus de la couleur (pas seulement la couleur). */
+.champ [aria-invalid='true'] {
+  border: 2px solid var(--erreur);
+}
+
+.champ .message-champ {
+  margin: 0;
+  color: var(--erreur);
+}
+
 /* Les contrôles de formulaire n'héritent pas de la police par défaut. */
 select,
 input,
+textarea,
 button {
   font: inherit;
 }

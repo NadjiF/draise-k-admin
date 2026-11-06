@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Connexion } from './auth/connexion/connexion';
 import { connexionRequiseGuard } from './auth/connexion-requise.guard';
+import { FormulairePiece } from './pieces/formulaire-piece/formulaire-piece';
 import { ListePieces } from './pieces/liste-pieces/liste-pieces';
 
 export const routes: Routes = [
@@ -13,6 +14,13 @@ export const routes: Routes = [
   {
     path: '',
     canActivateChild: [connexionRequiseGuard],
-    children: [{ path: '', component: ListePieces, title: 'Pièces – La Draise-K Administration' }],
+    children: [
+      { path: '', component: ListePieces, title: 'Pièces – La Draise-K Administration' },
+      {
+        path: 'pieces/nouvelle',
+        component: FormulairePiece,
+        title: 'Nouvelle pièce – La Draise-K Administration',
+      },
+    ],
   },
 ];

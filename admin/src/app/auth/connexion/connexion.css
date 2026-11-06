@@ -14,33 +14,7 @@ form {
   max-width: 24rem;
 }
 
-.champ {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-label {
-  font-weight: 600;
-}
-
-input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--texte-doux);
-  border-radius: 0.375rem;
-  background: var(--surface);
-  color: var(--texte);
-}
-
-/* Champ en erreur : bordure plus épaisse en plus de la couleur (pas seulement la couleur). */
-input[aria-invalid='true'] {
-  border: 2px solid var(--erreur);
-}
-
-.message-champ {
-  margin: 0;
-  color: var(--erreur);
-}
+/* Styles des champs (.champ) : communs, dans src/styles.css. */
 
 button {
   align-self: flex-start;
