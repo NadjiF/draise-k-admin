@@ -3,6 +3,9 @@
 <!-- [formGroup] relie la balise <form> au FormGroup de la classe.
      (ngSubmit) : appelé à l'envoi (bouton ou touche Entrée), sans recharger la page. -->
 <form [formGroup]="formulaire" (ngSubmit)="envoyer()">
+  @if (sessionExpiree()) {
+    <p role="status" class="information">Session expirée. Reconnectez-vous.</p>
+  }
   @if (erreurApi()) {
     <p role="alert" class="erreur">{{ erreurApi() }}</p>
   }

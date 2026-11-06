@@ -149,4 +149,33 @@ describe('Connexion', () => {
     expect(page.querySelector('[role="alert"]')).toBeNull();
     api.expectOne('/api/auth/connexion'); // nouvelle tentative en attente de réponse
   });
+
+  describe('arrivée après une session expirée (?session=expiree)', () => {
+    // setInput fait ce que fait le routeur avec withComponentInputBinding :
+    // il donne à l'input « session » la valeur lue dans l'URL.
+    beforeEach(async () => {
+      fixture.componentRef.setInput('session', 'expiree');
+      await fixture.whenStable();
+    });
+
+    it('affiche « Session expirée »', () => {
+      expect(page.querySelector('[role="status"]')?.textContent).toContain(
+        'Session expirée. Reconnectez-vous.',
+      );
+    });
+
+    it('efface le message dès que le formulaire est envoyé', async () => {
+      await remplirEtEnvoyer();
+
+      expect(page.querySelector('[role="status"]')).toBeNull();
+      api.expectOne('/api/auth/connexion');
+    });
+  });
+
+  it("n'affiche pas « Session expirée » pour une autre valeur de ?session", async () => {
+    fixture.componentRef.setInput('session', 'autre-chose');
+    await fixture.whenStable();
+
+    expect(page.querySelector('[role="status"]')).toBeNull();
+  });
 });

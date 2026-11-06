@@ -62,6 +62,16 @@ button:disabled {
   cursor: wait;
 }
 
+/* Message d'information (session expirée) : même forme que l'erreur, couleurs principales. */
+.information {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--primaire);
+  border-radius: 0.5rem;
+  background: var(--surface-alt);
+  color: var(--texte);
+}
+
 /* Comme le message d'erreur de La Draise-K (app/assistant/message-erreur.tsx). */
 .erreur {
   margin: 0;

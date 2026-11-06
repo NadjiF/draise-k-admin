@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { messageErreur } from '../../erreurs';
@@ -33,6 +33,15 @@ export class Connexion {
 
   protected readonly envoiEnCours = signal(false);
   protected readonly erreurApi = signal<string | null>(null);
+
+  // Valeur de ?session=… dans l'URL, transmise par le routeur (withComponentInputBinding).
+  // La garde y met « expiree » quand elle redirige à cause d'un jeton périmé.
+  readonly session = input<string>();
+
+  // Le message « Session expirée » s'efface dès qu'on renvoie le formulaire.
+  protected readonly sessionExpiree = computed(
+    () => this.session() === 'expiree' && !this.envoiEnCours() && this.erreurApi() === null,
+  );
 
   // Un message d'erreur de champ ne s'affiche qu'une fois le champ « touché » (quitté au moins
   // une fois) : on n'affiche pas « obligatoire » à quelqu'un qui n'a pas encore commencé à taper.
