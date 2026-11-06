@@ -41,3 +41,13 @@ export const LIBELLES_CATEGORIES: Record<Categorie, string> = {
   eclairage: 'Éclairage',
   accessoires: 'Accessoires',
 };
+
+// Toutes les catégories, dans l'ordre des libellés ci-dessus.
+export const CATEGORIES = Object.keys(LIBELLES_CATEGORIES) as Categorie[];
+
+// Reprise de La Draise-K (draise-k/lib/pieces.ts).
+// « valeur is Categorie » : si la fonction renvoie true, TypeScript traite ensuite valeur
+// comme une Categorie, et non plus comme une simple chaîne.
+export function estCategorie(valeur: unknown): valeur is Categorie {
+  return typeof valeur === 'string' && Object.hasOwn(LIBELLES_CATEGORIES, valeur);
+}

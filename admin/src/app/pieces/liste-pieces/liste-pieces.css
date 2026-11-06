@@ -1,5 +1,12 @@
 /* Mise en page minimale ; les couleurs de La Draise-K viendront à l'étape 6. */
 
+.filtre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 table {
   border-collapse: collapse;
   width: 100%;

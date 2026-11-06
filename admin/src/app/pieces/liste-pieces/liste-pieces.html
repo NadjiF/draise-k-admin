@@ -7,23 +7,40 @@
 } @else if (pieces().length === 0) {
   <p>Le catalogue ne contient aucune pièce.</p>
 } @else {
-  <table>
-    <caption>Pièces triées par catégorie</caption>
-    <thead>
-      <tr>
-        <th scope="col">Nom</th>
-        <th scope="col">Catégorie</th>
-        <th scope="col" class="prix">Prix TTC</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (piece of pieces(); track piece.id) {
-        <tr>
-          <th scope="row">{{ piece.nom }}</th>
-          <td>{{ libellesCategories[piece.categorie] }}</td>
-          <td class="prix">{{ prix(piece.prixCentimes) }}</td>
-        </tr>
+  <div class="filtre">
+    <label for="filtre-categorie">Catégorie</label>
+    <!-- #filtre donne un nom à la balise <select>, pour lire filtre.value juste à côté. -->
+    <select id="filtre-categorie" #filtre (change)="choisirCategorie(filtre.value)">
+      <option value="">Toutes les catégories</option>
+      @for (categorie of categories; track categorie) {
+        <option [value]="categorie">{{ libellesCategories[categorie] }}</option>
       }
-    </tbody>
-  </table>
+    </select>
+  </div>
+
+  <p role="status">{{ resume() }}</p>
+
+  @if (piecesFiltrees().length === 0) {
+    <p>Aucune pièce dans cette catégorie.</p>
+  } @else {
+    <table>
+      <caption>Pièces triées par catégorie</caption>
+      <thead>
+        <tr>
+          <th scope="col">Nom</th>
+          <th scope="col">Catégorie</th>
+          <th scope="col" class="prix">Prix TTC</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (piece of piecesFiltrees(); track piece.id) {
+          <tr>
+            <th scope="row">{{ piece.nom }}</th>
+            <td>{{ libellesCategories[piece.categorie] }}</td>
+            <td class="prix">{{ prix(piece.prixCentimes) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
 }

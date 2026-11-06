@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
-import { LIBELLES_CATEGORIES, Piece } from '../piece';
+import { Component, computed, inject, signal } from '@angular/core';
+import { CATEGORIES, Categorie, estCategorie, LIBELLES_CATEGORIES, Piece } from '../piece';
 import { PiecesService } from '../pieces.service';
 
 const formatPrix = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -19,6 +19,23 @@ export class ListePieces {
   protected readonly chargement = signal(true);
   protected readonly erreur = signal<string | null>(null);
 
+  // Filtre : null signifie « toutes les catégories ».
+  protected readonly categorieChoisie = signal<Categorie | null>(null);
+
+  // Recalculé automatiquement quand pieces ou categorieChoisie change.
+  protected readonly piecesFiltrees = computed(() => {
+    const categorie = this.categorieChoisie();
+    const pieces = this.pieces();
+    return categorie === null ? pieces : pieces.filter((piece) => piece.categorie === categorie);
+  });
+
+  // Nombre de pièces affichées, annoncé aux lecteurs d'écran quand le filtre change.
+  protected readonly resume = computed(() => {
+    const nombre = this.piecesFiltrees().length;
+    return `${nombre} ${nombre > 1 ? 'pièces affichées' : 'pièce affichée'}`;
+  });
+
+  protected readonly categories = CATEGORIES;
   protected readonly libellesCategories = LIBELLES_CATEGORIES;
 
   constructor() {
@@ -32,6 +49,11 @@ export class ListePieces {
         this.chargement.set(false);
       },
     });
+  }
+
+  // valeur vient du <select> : "" pour « Toutes les catégories », sinon une catégorie.
+  protected choisirCategorie(valeur: string): void {
+    this.categorieChoisie.set(estCategorie(valeur) ? valeur : null);
   }
 
   protected prix(centimes: number): string {

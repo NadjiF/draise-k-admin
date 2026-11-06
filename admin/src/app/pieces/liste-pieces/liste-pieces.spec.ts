@@ -59,7 +59,7 @@ describe('ListePieces', () => {
     // Intl sépare le montant et « € » par une espace insécable ( ) : le prix ne sera
     // jamais coupé en fin de ligne.
     expect(cellules).toEqual(['Pneu 700x28', 'Pneus et chambres à air', '29,90 €']);
-    expect(page.querySelector('[role="status"]')).toBeNull();
+    expect(page.textContent).not.toContain('Chargement des pièces');
   });
 
   it("affiche le message d'erreur renvoyé par l'API", async () => {
@@ -92,5 +92,67 @@ describe('ListePieces', () => {
     await fixture.whenStable();
 
     expect(page.textContent).toContain('Le catalogue ne contient aucune pièce.');
+    expect(page.querySelector('select')).toBeNull();
+  });
+
+  describe('filtre par catégorie', () => {
+    // Comme un utilisateur : choisir une option, ce qui déclenche l'événement change.
+    async function choisir(valeur: string) {
+      const select = page.querySelector<HTMLSelectElement>('#filtre-categorie')!;
+      select.value = valeur;
+      select.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+    }
+
+    const nomsAffiches = () =>
+      [...page.querySelectorAll('tbody th')].map((cellule) => cellule.textContent?.trim());
+
+    beforeEach(async () => {
+      api.expectOne('/api/pieces').flush(pieces);
+      await fixture.whenStable();
+    });
+
+    it('propose « Toutes les catégories » puis chaque catégorie, avec son libellé', () => {
+      const select = page.querySelector('select')!;
+      const options = [...select.options].map((option) => option.textContent?.trim());
+
+      expect(options).toEqual([
+        'Toutes les catégories',
+        'Freinage',
+        'Transmission',
+        'Pneus et chambres à air',
+        'Éclairage',
+        'Accessoires',
+      ]);
+      // Le <label> est relié au <select> : un lecteur d'écran annonce « Catégorie ».
+      expect(select.labels?.[0]?.textContent).toBe('Catégorie');
+    });
+
+    it('affiche toutes les pièces au départ', () => {
+      expect(nomsAffiches()).toEqual(['Antivol en U', 'Pneu 700x28']);
+      expect(page.querySelector('[role="status"]')?.textContent).toBe('2 pièces affichées');
+    });
+
+    it("n'affiche que les pièces de la catégorie choisie", async () => {
+      await choisir('pneus-chambres');
+
+      expect(nomsAffiches()).toEqual(['Pneu 700x28']);
+      expect(page.querySelector('[role="status"]')?.textContent).toBe('1 pièce affichée');
+    });
+
+    it('réaffiche toutes les pièces avec « Toutes les catégories »', async () => {
+      await choisir('pneus-chambres');
+      await choisir('');
+
+      expect(nomsAffiches()).toEqual(['Antivol en U', 'Pneu 700x28']);
+    });
+
+    it("l'indique quand la catégorie choisie n'a aucune pièce", async () => {
+      await choisir('freinage');
+
+      expect(page.querySelector('table')).toBeNull();
+      expect(page.textContent).toContain('Aucune pièce dans cette catégorie.');
+      expect(page.querySelector('[role="status"]')?.textContent).toBe('0 pièce affichée');
+    });
   });
 });
