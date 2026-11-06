@@ -27,6 +27,7 @@ Interface d'administration du catalogue de La Draise-K (boutique de démonstrati
 
 ### À faire à la mise en ligne
 - Régler `trust proxy` d'Express (`app.set("trust proxy", …)` dans api/src/app.ts) selon l'hébergeur. Derrière un proxy, sans ce réglage, toutes les requêtes semblent venir de l'adresse IP du proxy : la limite de tentatives de connexion bloquerait alors tout le monde à la fois.
+- En développement, l'interface appelle l'API par une URL relative (`/api/...`), transmise au port 3000 par le proxy du serveur de développement d'Angular (admin/proxy.conf.json). En production, si l'interface et l'API ne sont pas servies sous le même domaine, il faudra soit une redirection de `/api` vers l'API (reverse proxy), soit activer CORS dans l'API pour l'origine de l'interface.
 
 ### Hors V1
 La Draise-K qui lit le catalogue depuis l'API, plusieurs comptes ou rôles, envoi d'images, OAuth, Storybook.
