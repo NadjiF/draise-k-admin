@@ -45,13 +45,36 @@ describe('FormulairePiece (création)', () => {
     await fixture.whenStable();
   }
 
-  async function remplirEtEnvoyer(): Promise<void> {
+  async function remplir(): Promise<void> {
     await saisir('id', 'chaine-12v');
     await saisir('nom', '  Chaîne 12 vitesses  ');
     await saisir('categorie', 'transmission');
     await saisir('prix', '39,9');
     await saisir('description', 'Chaîne 126 maillons.');
+  }
+
+  async function remplirEtEnvoyer(): Promise<void> {
+    await remplir();
     await envoyer();
+  }
+
+  // Les cases d'un groupe de compatibilités (fieldset #champ-taillesRoue…).
+  const cases = (critere: string) => [
+    ...page.querySelectorAll<HTMLInputElement>(`#champ-${critere} input[type="checkbox"]`),
+  ];
+
+  // La case dont le libellé est exactement ce texte, ex. caseDe('vitesses', '11').
+  function caseDe(critere: string, libelle: string): HTMLInputElement {
+    const label = [...page.querySelectorAll(`#champ-${critere} label`)].find(
+      (element) => element.textContent?.trim() === libelle,
+    );
+    return label!.querySelector('input')!;
+  }
+
+  // click() coche ou décoche la case et déclenche l'évènement change, comme un vrai clic.
+  async function cocher(critere: string, ...libelles: string[]): Promise<void> {
+    for (const libelle of libelles) caseDe(critere, libelle).click();
+    await fixture.whenStable();
   }
 
   it("n'affiche aucune erreur à l'ouverture", () => {
@@ -199,5 +222,77 @@ describe('FormulairePiece (création)', () => {
 
     expect(alerte()?.textContent).toContain("Impossible de joindre l'API.");
     expect(page.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
+  });
+
+  describe('compatibilités', () => {
+    it('affiche un groupe de cases par critère, toutes décochées', () => {
+      const legendes = [...page.querySelectorAll('fieldset legend')].map((l) =>
+        l.textContent?.trim(),
+      );
+      expect(legendes).toEqual(['Tailles de roue', 'Types de frein', 'Nombres de vitesses']);
+
+      expect(cases('taillesRoue').length).toBe(6);
+      expect(cases('typesFrein').length).toBe(4);
+      expect(cases('vitesses').length).toBe(13);
+      expect(
+        [...page.querySelectorAll<HTMLInputElement>('fieldset input')].some((c) => c.checked),
+      ).toBe(false);
+
+      // Libellés de La Draise-K, et texte d'aide relié au groupe.
+      expect(caseDe('taillesRoue', '700c (route)')).toBeDefined();
+      expect(caseDe('typesFrein', 'V-Brake')).toBeDefined();
+      expect(champ('taillesRoue').getAttribute('aria-describedby')).toBe('champ-taillesRoue-aide');
+    });
+
+    it("envoie les cases cochées, dans l'ordre des listes, et les vitesses en nombres", async () => {
+      await remplir();
+      await cocher('taillesRoue', '700c (route)', '29 pouces');
+      await cocher('typesFrein', 'Disque hydraulique');
+      await cocher('vitesses', '12', '11', '13');
+      await cocher('vitesses', '13'); // cochée puis décochée : non envoyée
+      await envoyer();
+
+      const requete = api.expectOne('/api/pieces');
+      expect(requete.request.body.compatibilites).toEqual({
+        taillesRoue: ['29', '700c'],
+        typesFrein: ['disque-hydraulique'],
+        vitesses: [11, 12],
+      });
+      requete.flush(requete.request.body, { status: 201, statusText: 'Created' });
+    });
+
+    it("affiche une erreur de l'API sur un critère dans son groupe, et y place le focus", async () => {
+      await remplir();
+      await cocher('vitesses', '11');
+      await envoyer();
+      api.expectOne('/api/pieces').flush(
+        {
+          erreur: 'Données invalides : 1 champ à corriger.',
+          details: [
+            {
+              champ: 'compatibilites.vitesses',
+              message: 'Chaque nombre de vitesses doit être compris entre 1 et 13.',
+            },
+          ],
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      await fixture.whenStable();
+
+      // Le message est dans la légende du groupe : il est annoncé en entrant dans le groupe.
+      expect(champ('vitesses').querySelector('legend .message-champ')?.textContent?.trim()).toBe(
+        'Chaque nombre de vitesses doit être compris entre 1 et 13.',
+      );
+      expect(champ('vitesses').classList).toContain('en-erreur');
+      // aria-describedby ne garde que l'aide : le message n'est pas lu deux fois.
+      expect(champ('vitesses').getAttribute('aria-describedby')).toBe('champ-vitesses-aide');
+      expect(alerte()?.querySelector('li')).toBeNull(); // placée dans le groupe, pas en haut
+      // Un fieldset ne prend pas le focus : il va sur la première case du groupe.
+      expect(document.activeElement).toBe(cases('vitesses')[0]);
+
+      // L'erreur disparaît dès qu'on change une case du groupe.
+      await cocher('vitesses', '12');
+      expect(erreurDe('vitesses')).toBeUndefined();
+    });
   });
 });

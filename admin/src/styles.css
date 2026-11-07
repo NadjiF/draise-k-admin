@@ -52,8 +52,9 @@ body {
   font-weight: 600;
 }
 
-/* Texte d'aide sous le libellé, relié au champ par aria-describedby. */
-.champ .aide {
+/* Texte d'aide sous le libellé, relié au champ par aria-describedby.
+   .aide et .message-champ servent aussi hors d'un .champ (groupes de cases à cocher). */
+.aide {
   margin: 0;
   color: var(--texte-doux);
 }
@@ -77,7 +78,7 @@ body {
   border: 2px solid var(--erreur);
 }
 
-.champ .message-champ {
+.message-champ {
   margin: 0;
   color: var(--erreur);
 }

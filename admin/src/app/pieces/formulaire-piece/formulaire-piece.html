@@ -106,6 +106,46 @@
     }
   </div>
 
+  <!-- Compatibilités : un groupe de cases à cocher par critère.
+       <fieldset> regroupe les cases et <legend> leur donne un titre commun : le lecteur d'écran
+       annonce « Tailles de roue, groupe » avant les cases. -->
+  <section class="compatibilites" aria-labelledby="titre-compatibilites">
+    <h2 id="titre-compatibilites">Compatibilités</h2>
+
+    @for (critere of criteres; track critere.champ) {
+      <!-- [formGroupName] relie ce bloc au groupe de cases du même nom dans le formulaire ;
+           à l'intérieur, formControlName désigne une case de ce groupe.
+           Le message d'erreur est dans la légende : les lecteurs d'écran annoncent toujours
+           la légende en entrant dans le groupe, alors qu'ils ne lisent pas tous
+           aria-describedby sur un fieldset. L'aide, moins importante, y reste. -->
+      <fieldset
+        [id]="'champ-' + critere.champ"
+        [formGroupName]="critere.champ"
+        [class.en-erreur]="message(critere.champ) !== null"
+        [attr.aria-describedby]="'champ-' + critere.champ + '-aide'"
+      >
+        <legend>
+          {{ critere.legende }}
+          @if (message(critere.champ); as message) {
+            <span [id]="'champ-' + critere.champ + '-erreur'" class="message-champ">{{
+              message
+            }}</span>
+          }
+        </legend>
+        <p [id]="'champ-' + critere.champ + '-aide'" class="aide">{{ critere.aide }}</p>
+        <div class="cases">
+          @for (option of critere.options; track option.cle) {
+            <!-- La case est dans son <label> : cliquer sur le texte coche aussi la case. -->
+            <label>
+              <input type="checkbox" [formControlName]="option.cle" />
+              {{ option.libelle }}
+            </label>
+          }
+        </div>
+      </fieldset>
+    }
+  </section>
+
   <div class="actions">
     <button type="submit" [disabled]="envoiEnCours()">
       {{ envoiEnCours() ? 'Enregistrement en cours…' : 'Enregistrer la pièce' }}

@@ -9,6 +9,13 @@ import type { Piece } from "./piece.ts";
 // Plus grand nombre accepté par une colonne integer de PostgreSQL.
 const ENTIER_MAX_POSTGRES = 2_147_483_647;
 
+// Nombres de vitesses acceptés : de 1 (vélo sans dérailleur) à 13 (transmissions
+// 13 vitesses, comme la Campagnolo Ekar). Mêmes valeurs que les cases du back-office
+// (admin/src/app/pieces/piece.ts, VITESSES) et que la contrainte CHECK de init.sql.
+const VITESSES_MIN = 1;
+const VITESSES_MAX = 13;
+const MESSAGE_VITESSES = `Chaque nombre de vitesses doit être compris entre ${VITESSES_MIN} et ${VITESSES_MAX}.`;
+
 const CATEGORIES = [
   "freinage",
   "transmission",
@@ -72,8 +79,8 @@ const schemaCompatibilites = z.strictObject(
       .array(
         z
           .int({ error: "Chaque nombre de vitesses doit être un nombre entier." })
-          .min(1, { error: "Chaque nombre de vitesses doit être supérieur à 0." })
-          .max(ENTIER_MAX_POSTGRES, { error: "Nombre de vitesses trop grand." }),
+          .min(VITESSES_MIN, { error: MESSAGE_VITESSES })
+          .max(VITESSES_MAX, { error: MESSAGE_VITESSES }),
         { error: "Les vitesses doivent être une liste de nombres." },
       )
       .min(1, { error: "Indiquez au moins un nombre de vitesses, ou retirez ce critère." })

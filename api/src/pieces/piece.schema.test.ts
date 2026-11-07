@@ -55,6 +55,12 @@ describe("validerPiece : données valides", () => {
     );
   });
 
+  it("accepte les vitesses de 1 à 13, les bornes comprises", () => {
+    const vitesses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+    const piece = { ...pieceValide(), compatibilites: { vitesses } };
+    expect(validerPiece(piece).compatibilites.vitesses).toEqual(vitesses);
+  });
+
   it("accepte le plus grand prix que la base peut stocker", () => {
     expect(validerPiece({ ...pieceValide(), prixCentimes: 2_147_483_647 }).prixCentimes).toBe(
       2_147_483_647,
@@ -160,7 +166,9 @@ describe("validerPiece : critères de compatibilité", () => {
       ["tambour"],
       "Type de frein inconnu : « tambour ». Valeurs possibles : v-brake, etrier, disque-mecanique, disque-hydraulique.",
     ],
-    ["vitesses", [0], "Chaque nombre de vitesses doit être supérieur à 0."],
+    ["vitesses", [0], "Chaque nombre de vitesses doit être compris entre 1 et 13."],
+    ["vitesses", [14], "Chaque nombre de vitesses doit être compris entre 1 et 13."],
+    ["vitesses", [11, 99], "Chaque nombre de vitesses doit être compris entre 1 et 13."],
     ["vitesses", [9.5], "Chaque nombre de vitesses doit être un nombre entier."],
   ])("refuse %s = %j", (critere, valeur, message) => {
     expect(

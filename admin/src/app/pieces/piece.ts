@@ -71,7 +71,8 @@ export const TYPES_FREIN = Object.keys(LIBELLES_TYPES_FREIN) as TypeFrein[];
 
 // Nombres de vitesses proposés dans le formulaire : de 1 (vélo sans dérailleur)
 // à 13 (transmissions 13 vitesses, comme la Campagnolo Ekar).
-// L'API accepte tout entier supérieur à 0 : l'interface est volontairement plus limitée.
+// Mêmes valeurs que l'API (api/src/pieces/piece.schema.ts) et que la contrainte CHECK
+// de api/db/init.sql : une pièce ne peut pas avoir une valeur absente de ces cases.
 export const VITESSES: readonly number[] = Array.from({ length: 13 }, (_, i) => i + 1);
 
 // Reprise de La Draise-K (draise-k/lib/pieces.ts).

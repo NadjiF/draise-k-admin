@@ -2,13 +2,33 @@ import { Component, ElementRef, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { detailsErreur, messageErreur } from '../../erreurs';
-import { CATEGORIES, Categorie, estCategorie, LIBELLES_CATEGORIES, Piece } from '../piece';
+import {
+  CATEGORIES,
+  Categorie,
+  estCategorie,
+  LIBELLES_CATEGORIES,
+  Piece,
+  TAILLES_ROUE,
+  TYPES_FREIN,
+  VITESSES,
+} from '../piece';
 import { PiecesService } from '../pieces.service';
 import { eurosVersCentimes } from '../prix';
+import { casesVersCompatibilites, creerCases, CRITERES } from './compatibilites';
 import { FORMAT_ID, obligatoire, prixEnEuros } from './validateurs';
 
 // Noms des champs du formulaire, dans l'ordre de la page (sert à placer le focus).
-const CHAMPS = ['id', 'nom', 'categorie', 'prix', 'description'] as const;
+// Les trois derniers sont des groupes de cases à cocher (les compatibilités).
+const CHAMPS = [
+  'id',
+  'nom',
+  'categorie',
+  'prix',
+  'description',
+  'taillesRoue',
+  'typesFrein',
+  'vitesses',
+] as const;
 type Champ = (typeof CHAMPS)[number];
 
 // Message affiché pour chaque erreur de validation, selon le champ et la clé de l'erreur
@@ -28,9 +48,14 @@ const MESSAGES: Record<Champ, Record<string, string>> = {
     max: 'Le prix est trop grand.',
   },
   description: {},
+  // Les cases à cocher n'ont pas de validateur : seule l'API peut y signaler une erreur.
+  taillesRoue: {},
+  typesFrein: {},
+  vitesses: {},
 };
 
 // Champs qui ont un texte d'aide sous leur libellé (relié au champ par aria-describedby).
+// Les groupes de cases ont tous une aide, reliée directement dans le gabarit.
 const CHAMPS_AVEC_AIDE: ReadonlySet<Champ> = new Set(['id', 'prix']);
 
 // Nom d'un champ dans le JSON de l'API → champ du formulaire. Le prix est saisi en euros
@@ -42,6 +67,9 @@ const CHAMPS_API = new Map<string, Champ>([
   ['categorie', 'categorie'],
   ['prixCentimes', 'prix'],
   ['description', 'description'],
+  ['compatibilites.taillesRoue', 'taillesRoue'],
+  ['compatibilites.typesFrein', 'typesFrein'],
+  ['compatibilites.vitesses', 'vitesses'],
 ]);
 
 const MESSAGE_API_INJOIGNABLE =
@@ -61,9 +89,9 @@ export class FormulairePiece {
 
   protected readonly categories = CATEGORIES;
   protected readonly libellesCategories = LIBELLES_CATEGORIES;
+  protected readonly criteres = CRITERES;
 
   // Validators.pattern : validateur fourni par Angular (clé d'erreur « pattern »).
-  // Les compatibilités arrivent à l'étape suivante.
   protected readonly formulaire = new FormGroup({
     id: new FormControl('', {
       nonNullable: true,
@@ -77,6 +105,10 @@ export class FormulairePiece {
     }),
     prix: new FormControl('', { nonNullable: true, validators: [obligatoire, prixEnEuros] }),
     description: new FormControl('', { nonNullable: true }),
+    // Un groupe de cases par critère ; leurs noms sont les valeurs possibles ("26", "v-brake", "11").
+    taillesRoue: creerCases(TAILLES_ROUE),
+    typesFrein: creerCases(TYPES_FREIN),
+    vitesses: creerCases(VITESSES.map(String)),
   });
 
   protected readonly envoiEnCours = signal(false);
@@ -124,7 +156,7 @@ export class FormulairePiece {
       nom: valeurs.nom.trim(),
       categorie: valeurs.categorie,
       prixCentimes,
-      compatibilites: {},
+      compatibilites: casesVersCompatibilites(valeurs),
       description: valeurs.description,
     };
 
@@ -167,6 +199,9 @@ export class FormulairePiece {
   private placerFocusSurPremiereErreur(): void {
     const premier = CHAMPS.find((champ) => this.formulaire.controls[champ].invalid);
     if (premier === undefined) return;
-    this.hote.nativeElement.querySelector<HTMLElement>(`#champ-${premier}`)?.focus();
+    const element = this.hote.nativeElement.querySelector<HTMLElement>(`#champ-${premier}`);
+    // Un <fieldset> ne peut pas recevoir le focus : on le place sur sa première case.
+    const cible = element?.matches('fieldset') ? element.querySelector('input') : element;
+    cible?.focus();
   }
 }

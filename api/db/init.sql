@@ -22,8 +22,11 @@ CREATE TABLE pieces (
                 CHECK (cardinality(types_frein) > 0
                        AND types_frein <@ ARRAY['v-brake','etrier',
                                                 'disque-mecanique','disque-hydraulique']),
+  -- Vitesses de 1 à 13, comme la validation de l'API (piece.schema.ts).
+  -- <@ (« est contenu dans ») refuse aussi un élément NULL, contrairement à 0 < ALL (…).
   vitesses      integer[]
-                CHECK (cardinality(vitesses) > 0 AND 0 < ALL (vitesses))
+                CHECK (cardinality(vitesses) > 0
+                       AND vitesses <@ ARRAY[1,2,3,4,5,6,7,8,9,10,11,12,13])
 );
 
 INSERT INTO pieces
