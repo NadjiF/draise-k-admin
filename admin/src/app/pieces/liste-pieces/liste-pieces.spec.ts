@@ -50,10 +50,29 @@ describe('ListePieces', () => {
 
   afterEach(() => api.verify());
 
+  // jsdom (le faux navigateur des tests) ne sait pas ouvrir une boîte de dialogue :
+  // showModal et close n'y existent pas. Ces versions simplifiées font l'essentiel :
+  // l'attribut open (boîte ouverte ou non) et l'évènement close à la fermeture.
+  // Le comportement réel (page inerte, Échap, retour du focus) n'est pas testable ici.
+  // titreALOuverture : le titre de la boîte au moment exact de l'ouverture, celui qu'un
+  // lecteur d'écran annoncerait.
+  let titreALOuverture: string | undefined;
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+      titreALOuverture = this.querySelector('h2')?.textContent ?? undefined;
+      this.setAttribute('open', '');
+    };
+    HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+      this.removeAttribute('open');
+      this.dispatchEvent(new Event('close'));
+    };
+  });
+
   // La page a plusieurs zones role="status" (confirmation, chargement, résumé) : chacune
   // est cherchée par sa classe ou son texte.
   const confirmation = () => page.querySelector('.confirmation')?.textContent?.trim();
   const resume = () => page.querySelector('.resume')?.textContent;
+  const titre = () => page.querySelector('h1');
 
   it("affiche un message de chargement tant que l'API n'a pas répondu", async () => {
     await ouvrir();
@@ -73,12 +92,8 @@ describe('ListePieces', () => {
     const cellules = [...lignes[1].querySelectorAll('th, td')].map((c) => c.textContent?.trim());
     // Intl sépare le montant et « € » par une espace insécable ( ) : le prix ne sera
     // jamais coupé en fin de ligne.
-    expect(cellules).toEqual([
-      'Pneu 700x28',
-      'Pneus et chambres à air',
-      '29,90 €',
-      'Modifier Pneu 700x28',
-    ]);
+    // slice(0, 3) : la 4e cellule (« Modifier », « Supprimer ») a ses propres tests.
+    expect(cellules.slice(0, 3)).toEqual(['Pneu 700x28', 'Pneus et chambres à air', '29,90 €']);
     expect(page.textContent).not.toContain('Chargement des pièces');
   });
 
@@ -159,6 +174,9 @@ describe('ListePieces', () => {
       await fixture.whenStable();
 
       expect(confirmation()).toBe('La pièce « Antivol en U » a été ajoutée.');
+      // Le bouton « Enregistrer » a disparu avec le formulaire : le focus est sur le titre.
+      expect(document.activeElement).toBe(titre());
+      expect(titre()?.getAttribute('tabindex')).toBe('-1');
       // Même élément qu'au départ : la zone a changé, elle n'a pas été recréée.
       expect(page.querySelector('.confirmation')).toBe(zone);
       // Le message a été consommé : il ne réapparaîtra pas au prochain passage sur la liste.
@@ -172,6 +190,7 @@ describe('ListePieces', () => {
       await fixture.whenStable();
 
       expect(confirmation()).toBe('La pièce « Antivol en U » a été modifiée.');
+      expect(document.activeElement).toBe(titre());
     });
 
     it("n'affiche rien sans message", async () => {
@@ -181,6 +200,124 @@ describe('ListePieces', () => {
 
       expect(confirmation()).toBe('');
       expect(page.querySelector('.confirmation.visible')).toBeNull();
+      // Arrivée normale sur la page : le focus n'est pas déplacé.
+      expect(document.activeElement).not.toBe(titre());
+    });
+  });
+
+  describe('suppression', () => {
+    const dialogue = () => page.querySelector('dialog')!;
+    const boutonDialogue = (texte: string) =>
+      [...dialogue().querySelectorAll('button')].find((b) => b.textContent?.trim() === texte)!;
+
+    // Le bouton « Supprimer » de la ligne de cette pièce.
+    function boutonSupprimer(nom: string): HTMLButtonElement {
+      const ligne = [...page.querySelectorAll('tbody tr')].find(
+        (tr) => tr.querySelector('th')?.textContent?.trim() === nom,
+      );
+      return ligne!.querySelector('button.supprimer')!;
+    }
+
+    async function cliquer(bouton: HTMLButtonElement): Promise<void> {
+      bouton.click();
+      await fixture.whenStable();
+    }
+
+    beforeEach(async () => {
+      await ouvrir();
+      api.expectOne('/api/pieces').flush(pieces);
+      await fixture.whenStable();
+    });
+
+    it('propose un bouton « Supprimer » par pièce, qui nomme la pièce', () => {
+      const bouton = boutonSupprimer('Antivol en U');
+      expect(bouton.textContent?.replace(/\s+/g, ' ').trim()).toBe('Supprimer Antivol en U');
+      expect(bouton.getAttribute('type')).toBe('button');
+    });
+
+    it('ouvre une boîte de dialogue nommée par son titre, avec le focus sur « Annuler »', async () => {
+      expect(dialogue().hasAttribute('open')).toBe(false);
+
+      await cliquer(boutonSupprimer('Antivol en U'));
+
+      expect(dialogue().hasAttribute('open')).toBe(true);
+      // Le nom de la pièce était déjà dans le titre à l'ouverture, pas seulement après.
+      expect(titreALOuverture).toBe('Supprimer la pièce « Antivol en U » ?');
+      const idTitre = dialogue().getAttribute('aria-labelledby')!;
+      expect(page.querySelector(`#${idTitre}`)?.textContent).toBe(
+        'Supprimer la pièce « Antivol en U » ?',
+      );
+      const idTexte = dialogue().getAttribute('aria-describedby')!;
+      expect(page.querySelector(`#${idTexte}`)?.textContent).toContain('définitive');
+      expect(document.activeElement).toBe(boutonDialogue('Annuler'));
+      api.expectNone('/api/pieces/antivol-u'); // rien n'est supprimé sans confirmation
+    });
+
+    it('« Annuler » ferme la boîte sans rien supprimer', async () => {
+      await cliquer(boutonSupprimer('Antivol en U'));
+      await cliquer(boutonDialogue('Annuler'));
+
+      expect(dialogue().hasAttribute('open')).toBe(false);
+      expect(page.querySelectorAll('tbody tr').length).toBe(2);
+      api.expectNone('/api/pieces/antivol-u');
+    });
+
+    it('supprime la pièce, la retire de la liste, confirme et place le focus sur le titre', async () => {
+      await cliquer(boutonSupprimer('Antivol en U'));
+      await cliquer(boutonDialogue('Supprimer définitivement'));
+
+      const requete = api.expectOne('/api/pieces/antivol-u');
+      expect(requete.request.method).toBe('DELETE');
+      expect(boutonDialogue('Suppression en cours…').disabled).toBe(true);
+
+      requete.flush(null, { status: 204, statusText: 'No Content' });
+      await fixture.whenStable();
+
+      expect(dialogue().hasAttribute('open')).toBe(false);
+      expect([...page.querySelectorAll('tbody th')].map((th) => th.textContent?.trim())).toEqual([
+        'Pneu 700x28',
+      ]);
+      expect(resume()).toBe('1 pièce affichée');
+      expect(confirmation()).toBe('La pièce « Antivol en U » a été supprimée.');
+      expect(document.activeElement).toBe(titre());
+    });
+
+    it("affiche l'erreur de l'API dans la boîte, qui reste ouverte", async () => {
+      await cliquer(boutonSupprimer('Antivol en U'));
+      await cliquer(boutonDialogue('Supprimer définitivement'));
+      api
+        .expectOne('/api/pieces/antivol-u')
+        .flush(
+          { erreur: "Aucune pièce avec l'identifiant « antivol-u »." },
+          { status: 404, statusText: 'Not Found' },
+        );
+      await fixture.whenStable();
+
+      expect(dialogue().hasAttribute('open')).toBe(true);
+      expect(dialogue().querySelector('[role="alert"]')?.textContent).toBe(
+        "Aucune pièce avec l'identifiant « antivol-u ».",
+      );
+      expect(boutonDialogue('Supprimer définitivement').disabled).toBe(false);
+      expect(page.querySelectorAll('tbody tr').length).toBe(2);
+      expect(confirmation()).toBe('');
+    });
+
+    it("efface l'erreur quand on rouvre la boîte", async () => {
+      await cliquer(boutonSupprimer('Antivol en U'));
+      await cliquer(boutonDialogue('Supprimer définitivement'));
+      api.expectOne('/api/pieces/antivol-u').flush('', { status: 502, statusText: 'Bad Gateway' });
+      await fixture.whenStable();
+      expect(dialogue().querySelector('[role="alert"]')?.textContent).toContain(
+        "Impossible de joindre l'API",
+      );
+
+      await cliquer(boutonDialogue('Annuler'));
+      await cliquer(boutonSupprimer('Pneu 700x28'));
+
+      expect(dialogue().querySelector('[role="alert"]')).toBeNull();
+      expect(dialogue().querySelector('h2')?.textContent).toBe(
+        'Supprimer la pièce « Pneu 700x28 » ?',
+      );
     });
   });
 

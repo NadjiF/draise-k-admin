@@ -1,5 +1,6 @@
 <div class="entete-page">
-  <h1>Pièces du catalogue</h1>
+  <!-- tabindex="-1" : reçoit le focus après une confirmation (voir placerFocusSurTitre). -->
+  <h1 #titre tabindex="-1">Pièces du catalogue</h1>
   <!-- Un lien et non un bouton : il mène à une autre page (adresse visible, ouverture
        dans un nouvel onglet possible). Il a seulement l'apparence d'un bouton. -->
   <a routerLink="/pieces/nouvelle" class="ajouter">Ajouter une pièce</a>
@@ -59,6 +60,9 @@
               <a [routerLink]="['/pieces', piece.id, 'modifier']"
                 >Modifier<span class="visuellement-cache"> {{ piece.nom }}</span></a
               >
+              <button type="button" class="supprimer" (click)="demanderSuppression(piece)">
+                Supprimer<span class="visuellement-cache"> {{ piece.nom }}</span>
+              </button>
             </td>
           </tr>
         }
@@ -66,3 +70,39 @@
     </table>
   }
 }
+
+<!-- Boîte de dialogue de confirmation, toujours dans la page, fermée tant que showModal()
+     n'est pas appelée. aria-labelledby : son nom est son titre ; aria-describedby : le texte
+     d'explication est lu à l'ouverture. -->
+<dialog
+  #dialogue
+  aria-labelledby="titre-suppression"
+  aria-describedby="texte-suppression"
+  (cancel)="surEchap($event)"
+  (close)="surFermeture()"
+>
+  <h2 id="titre-suppression">Supprimer la pièce « {{ pieceASupprimer()?.nom }} » ?</h2>
+  <p id="texte-suppression">Elle sera retirée du catalogue. Cette action est définitive.</p>
+
+  @if (erreurSuppression(); as erreur) {
+    <p role="alert" class="erreur">{{ erreur }}</p>
+  }
+
+  <div class="actions-dialogue">
+    <button #boutonAnnuler type="button" class="annuler" (click)="annulerSuppression()">
+      Annuler
+    </button>
+    <button
+      type="button"
+      class="confirmer-suppression"
+      [disabled]="suppressionEnCours()"
+      (click)="confirmerSuppression()"
+    >
+      @if (suppressionEnCours()) {
+        Suppression en cours…
+      } @else {
+        Supprimer définitivement
+      }
+    </button>
+  </div>
+</dialog>

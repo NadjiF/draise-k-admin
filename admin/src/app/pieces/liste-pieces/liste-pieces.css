@@ -112,3 +112,83 @@ tbody th {
   background: var(--surface);
   color: var(--texte);
 }
+
+/* Colonne « Actions » : « Modifier » et « Supprimer » côte à côte. */
+td:last-child {
+  white-space: nowrap;
+}
+
+td:last-child > * + * {
+  margin-left: 1rem;
+}
+
+/* Boutons : couleurs de la palette ; rouge (--erreur) pour ce qui supprime. */
+button {
+  padding: 0.375rem 0.875rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.supprimer {
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--erreur);
+  background: transparent;
+  color: var(--erreur);
+}
+
+.supprimer:hover {
+  background: var(--erreur-fond);
+}
+
+/* Boîte de dialogue de suppression, centrée par le navigateur (showModal). */
+dialog {
+  max-width: min(32rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  border: 1px solid var(--cuivre);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--texte);
+}
+
+/* ::backdrop : le voile posé par showModal sur le reste de la page. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 50%);
+}
+
+dialog h2 {
+  margin-top: 0;
+  color: var(--primaire);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.actions-dialogue {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.annuler {
+  border: 1px solid var(--primaire);
+  background: transparent;
+  color: var(--primaire);
+}
+
+.annuler:hover {
+  background: var(--surface-alt);
+}
+
+/* --erreur-fond sur --erreur : contraste suffisant en thème clair comme en thème sombre. */
+.confirmer-suppression {
+  border: 1px solid var(--erreur);
+  background: var(--erreur);
+  color: var(--erreur-fond);
+  font-weight: 600;
+}
+
+.confirmer-suppression:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
