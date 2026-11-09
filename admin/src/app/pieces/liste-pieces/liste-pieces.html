@@ -1,4 +1,14 @@
-<h1>Pièces du catalogue</h1>
+<div class="entete-page">
+  <h1>Pièces du catalogue</h1>
+  <!-- Un lien et non un bouton : il mène à une autre page (adresse visible, ouverture
+       dans un nouvel onglet possible). Il a seulement l'apparence d'un bouton. -->
+  <a routerLink="/pieces/nouvelle" class="ajouter">Ajouter une pièce</a>
+</div>
+
+<!-- Toujours présente, même vide : voir afficherConfirmation() dans liste-pieces.ts. -->
+<div role="status" class="confirmation" [class.visible]="confirmation() !== null">
+  {{ confirmation() }}
+</div>
 
 @if (chargement()) {
   <p role="status">Chargement des pièces…</p>
@@ -18,18 +28,21 @@
     </select>
   </div>
 
-  <p role="status">{{ resume() }}</p>
+  <p role="status" class="resume">{{ resume() }}</p>
 
   @if (piecesFiltrees().length === 0) {
     <p>Aucune pièce dans cette catégorie.</p>
   } @else {
     <table>
-      <caption>Pièces triées par catégorie</caption>
+      <caption>
+        Pièces triées par catégorie
+      </caption>
       <thead>
         <tr>
           <th scope="col">Nom</th>
           <th scope="col">Catégorie</th>
           <th scope="col" class="prix">Prix TTC</th>
+          <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -38,6 +51,15 @@
             <th scope="row">{{ piece.nom }}</th>
             <td>{{ libellesCategories[piece.categorie] }}</td>
             <td class="prix">{{ prix(piece.prixCentimes) }}</td>
+            <td>
+              <!-- Tableau ['/pieces', id, 'modifier'] : le routeur construit l'adresse
+                   /pieces/<id>/modifier et encode l'id si besoin.
+                   Le nom caché complète le lien pour les lecteurs d'écran : hors du tableau
+                   (liste des liens de la page), « Modifier » seul ne dirait pas quelle pièce. -->
+              <a [routerLink]="['/pieces', piece.id, 'modifier']"
+                >Modifier<span class="visuellement-cache"> {{ piece.nom }}</span></a
+              >
+            </td>
           </tr>
         }
       </tbody>

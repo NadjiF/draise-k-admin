@@ -1,6 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { MessagesService } from '../../messages.service';
 import { Piece } from '../piece';
 import { ListePieces } from './liste-pieces';
 
@@ -31,24 +33,37 @@ describe('ListePieces', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ListePieces],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      // provideRouter([]) : les liens routerLink ont besoin d'un routeur, même sans routes.
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
     api = TestBed.inject(HttpTestingController);
+  });
+
+  // Crée le composant, comme en arrivant sur la page. Appelée par chaque test, et non dans le
+  // beforeEach : un test peut ainsi préparer un message de confirmation avant l'arrivée.
+  async function ouvrir(): Promise<void> {
     fixture = TestBed.createComponent(ListePieces); // le constructeur envoie GET /api/pieces
     page = fixture.nativeElement;
     await fixture.whenStable(); // attend qu'Angular ait mis la page à jour
-  });
+  }
 
   afterEach(() => api.verify());
 
-  it("affiche un message de chargement tant que l'API n'a pas répondu", () => {
-    expect(page.querySelector('[role="status"]')?.textContent).toContain('Chargement des pièces');
+  // La page a plusieurs zones role="status" (confirmation, chargement, résumé) : chacune
+  // est cherchée par sa classe ou son texte.
+  const confirmation = () => page.querySelector('.confirmation')?.textContent?.trim();
+  const resume = () => page.querySelector('.resume')?.textContent;
+
+  it("affiche un message de chargement tant que l'API n'a pas répondu", async () => {
+    await ouvrir();
+    expect(page.textContent).toContain('Chargement des pièces');
 
     api.expectOne('/api/pieces'); // la requête est partie, mais on ne répond pas
   });
 
   it('affiche une ligne par pièce, avec le libellé de la catégorie et le prix en euros', async () => {
+    await ouvrir();
     api.expectOne('/api/pieces').flush(pieces);
     await fixture.whenStable();
 
@@ -58,11 +73,17 @@ describe('ListePieces', () => {
     const cellules = [...lignes[1].querySelectorAll('th, td')].map((c) => c.textContent?.trim());
     // Intl sépare le montant et « € » par une espace insécable ( ) : le prix ne sera
     // jamais coupé en fin de ligne.
-    expect(cellules).toEqual(['Pneu 700x28', 'Pneus et chambres à air', '29,90 €']);
+    expect(cellules).toEqual([
+      'Pneu 700x28',
+      'Pneus et chambres à air',
+      '29,90 €',
+      'Modifier Pneu 700x28',
+    ]);
     expect(page.textContent).not.toContain('Chargement des pièces');
   });
 
   it("affiche le message d'erreur renvoyé par l'API", async () => {
+    await ouvrir();
     api
       .expectOne('/api/pieces')
       .flush(
@@ -78,6 +99,7 @@ describe('ListePieces', () => {
   });
 
   it("affiche un message en français quand l'API est injoignable", async () => {
+    await ouvrir();
     // Ce que renvoie le proxy quand l'API est arrêtée : 502, corps en texte brut.
     api.expectOne('/api/pieces').flush('', { status: 502, statusText: 'Bad Gateway' });
     await fixture.whenStable();
@@ -88,11 +110,78 @@ describe('ListePieces', () => {
   });
 
   it('indique quand le catalogue est vide', async () => {
+    await ouvrir();
     api.expectOne('/api/pieces').flush([]);
     await fixture.whenStable();
 
     expect(page.textContent).toContain('Le catalogue ne contient aucune pièce.');
     expect(page.querySelector('select')).toBeNull();
+  });
+
+  it('propose un lien « Ajouter une pièce », même quand le catalogue est vide', async () => {
+    await ouvrir();
+    api.expectOne('/api/pieces').flush([]);
+    await fixture.whenStable();
+
+    const lien = [...page.querySelectorAll('a')].find(
+      (a) => a.textContent?.trim() === 'Ajouter une pièce',
+    );
+    expect(lien?.getAttribute('href')).toBe('/pieces/nouvelle');
+  });
+
+  it('propose un lien « Modifier » par pièce, qui nomme la pièce', async () => {
+    await ouvrir();
+    api.expectOne('/api/pieces').flush(pieces);
+    await fixture.whenStable();
+
+    const liens = [...page.querySelectorAll('tbody a')];
+    expect(liens.map((a) => a.getAttribute('href'))).toEqual([
+      '/pieces/antivol-u/modifier',
+      '/pieces/pneu-700x28/modifier',
+    ]);
+    // Texte lu par un lecteur d'écran : « Modifier » suivi du nom (caché à l'écran).
+    expect(liens[0].textContent?.trim()).toBe('Modifier Antivol en U');
+    expect(liens[0].querySelector('.visuellement-cache')?.textContent?.trim()).toBe('Antivol en U');
+  });
+
+  describe('confirmation après un enregistrement', () => {
+    it('affiche le message laissé par le formulaire, une fois la liste chargée', async () => {
+      // Le formulaire annonce le message avant de naviguer vers la liste.
+      TestBed.inject(MessagesService).annoncer('La pièce « Antivol en U » a été ajoutée.');
+      await ouvrir();
+
+      // La zone existe déjà, vide, pendant le chargement : son remplissage sera annoncé.
+      const zone = page.querySelector('.confirmation');
+      expect(zone?.getAttribute('role')).toBe('status');
+      expect(confirmation()).toBe('');
+
+      api.expectOne('/api/pieces').flush(pieces);
+      await fixture.whenStable();
+
+      expect(confirmation()).toBe('La pièce « Antivol en U » a été ajoutée.');
+      // Même élément qu'au départ : la zone a changé, elle n'a pas été recréée.
+      expect(page.querySelector('.confirmation')).toBe(zone);
+      // Le message a été consommé : il ne réapparaîtra pas au prochain passage sur la liste.
+      expect(TestBed.inject(MessagesService).recuperer()).toBeNull();
+    });
+
+    it("l'affiche aussi si la liste n'a pas pu être chargée", async () => {
+      TestBed.inject(MessagesService).annoncer('La pièce « Antivol en U » a été modifiée.');
+      await ouvrir();
+      api.expectOne('/api/pieces').flush('', { status: 502, statusText: 'Bad Gateway' });
+      await fixture.whenStable();
+
+      expect(confirmation()).toBe('La pièce « Antivol en U » a été modifiée.');
+    });
+
+    it("n'affiche rien sans message", async () => {
+      await ouvrir();
+      api.expectOne('/api/pieces').flush(pieces);
+      await fixture.whenStable();
+
+      expect(confirmation()).toBe('');
+      expect(page.querySelector('.confirmation.visible')).toBeNull();
+    });
   });
 
   describe('filtre par catégorie', () => {
@@ -108,6 +197,7 @@ describe('ListePieces', () => {
       [...page.querySelectorAll('tbody th')].map((cellule) => cellule.textContent?.trim());
 
     beforeEach(async () => {
+      await ouvrir();
       api.expectOne('/api/pieces').flush(pieces);
       await fixture.whenStable();
     });
@@ -130,14 +220,14 @@ describe('ListePieces', () => {
 
     it('affiche toutes les pièces au départ', () => {
       expect(nomsAffiches()).toEqual(['Antivol en U', 'Pneu 700x28']);
-      expect(page.querySelector('[role="status"]')?.textContent).toBe('2 pièces affichées');
+      expect(resume()).toBe('2 pièces affichées');
     });
 
     it("n'affiche que les pièces de la catégorie choisie", async () => {
       await choisir('pneus-chambres');
 
       expect(nomsAffiches()).toEqual(['Pneu 700x28']);
-      expect(page.querySelector('[role="status"]')?.textContent).toBe('1 pièce affichée');
+      expect(resume()).toBe('1 pièce affichée');
     });
 
     it('réaffiche toutes les pièces avec « Toutes les catégories »', async () => {
@@ -152,7 +242,7 @@ describe('ListePieces', () => {
 
       expect(page.querySelector('table')).toBeNull();
       expect(page.textContent).toContain('Aucune pièce dans cette catégorie.');
-      expect(page.querySelector('[role="status"]')?.textContent).toBe('0 pièce affichée');
+      expect(resume()).toBe('0 pièce affichée');
     });
   });
 });

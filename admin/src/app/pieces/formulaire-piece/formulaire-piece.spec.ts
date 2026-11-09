@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { MessagesService } from '../../messages.service';
 import { FormulairePiece } from './formulaire-piece';
 
 describe('FormulairePiece', () => {
@@ -155,6 +156,9 @@ describe('FormulairePiece', () => {
       await fixture.whenStable();
 
       expect(navigation).toHaveBeenCalledWith('/');
+      expect(TestBed.inject(MessagesService).recuperer()).toBe(
+        'La pièce « Chaîne 12 vitesses » a été ajoutée.',
+      );
     });
 
     it("affiche l'erreur 409 sous le champ identifiant", async () => {
@@ -174,6 +178,8 @@ describe('FormulairePiece', () => {
       expect(erreurDe('id')).toBe('Cet identifiant est déjà utilisé.');
       expect(document.activeElement).toBe(champ('id'));
       expect(navigation).not.toHaveBeenCalled();
+      // Rien n'a été enregistré : aucune confirmation ne doit attendre la liste.
+      expect(TestBed.inject(MessagesService).recuperer()).toBeNull();
     });
 
     it('place chaque détail du 400 sous son champ (prixCentimes sous le prix), et les autres en haut', async () => {
@@ -382,6 +388,9 @@ describe('FormulairePiece', () => {
       requete.flush(requete.request.body);
       await fixture.whenStable();
       expect(navigation).toHaveBeenCalledWith('/');
+      expect(TestBed.inject(MessagesService).recuperer()).toBe(
+        'La pièce « Chaîne 11 vitesses » a été modifiée.',
+      );
     });
 
     it('propose « Enregistrer les modifications »', async () => {

@@ -2,6 +2,7 @@ import { Component, ElementRef, OnInit, computed, inject, input, signal } from '
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { detailsErreur, messageErreur } from '../../erreurs';
+import { MessagesService } from '../../messages.service';
 import {
   CATEGORIES,
   Categorie,
@@ -94,6 +95,7 @@ const MESSAGE_CHARGEMENT_IMPOSSIBLE =
 export class FormulairePiece implements OnInit {
   private readonly piecesService = inject(PiecesService);
   private readonly router = inject(Router);
+  private readonly messages = inject(MessagesService);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly categories = CATEGORIES;
@@ -230,7 +232,13 @@ export class FormulairePiece implements OnInit {
       ? this.piecesService.modifier(piece)
       : this.piecesService.creer(piece);
     requete.subscribe({
-      next: () => void this.router.navigateByUrl('/'),
+      // Message de confirmation, affiché par la liste des pièces (voir MessagesService).
+      // Le nom vient de la réponse de l'API : c'est celui qui a été enregistré.
+      next: (enregistree) => {
+        const action = this.modification() ? 'modifiée' : 'ajoutée';
+        this.messages.annoncer(`La pièce « ${enregistree.nom} » a été ${action}.`);
+        void this.router.navigateByUrl('/');
+      },
       error: (erreur: unknown) => this.afficherErreurApi(erreur),
     });
   }
