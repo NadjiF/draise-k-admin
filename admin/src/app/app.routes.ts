@@ -21,6 +21,13 @@ export const routes: Routes = [
         component: FormulairePiece,
         title: 'Nouvelle pièce – La Draise-K Administration',
       },
+      // :id est un paramètre : /pieces/chaine-11v/modifier donne id = "chaine-11v",
+      // transmis à l'input id du composant.
+      {
+        path: 'pieces/:id/modifier',
+        component: FormulairePiece,
+        title: 'Modifier une pièce – La Draise-K Administration',
+      },
     ],
   },
 ];

@@ -78,6 +78,12 @@ fieldset.en-erreur {
   accent-color: var(--primaire);
 }
 
+/* Identifiant en lecture seule (modification) : fond grisé, comme un texte non modifiable.
+   Le contraste du texte reste celui des autres champs. */
+input[readonly] {
+  background: var(--surface-alt);
+}
+
 /* Prix : champ étroit suivi de « € ». */
 .avec-unite {
   display: flex;

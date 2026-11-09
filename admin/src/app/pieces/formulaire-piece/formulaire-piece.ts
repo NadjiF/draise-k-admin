@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { detailsErreur, messageErreur } from '../../erreurs';
@@ -13,8 +13,13 @@ import {
   VITESSES,
 } from '../piece';
 import { PiecesService } from '../pieces.service';
-import { eurosVersCentimes } from '../prix';
-import { casesVersCompatibilites, creerCases, CRITERES } from './compatibilites';
+import { centimesVersEuros, eurosVersCentimes } from '../prix';
+import {
+  casesVersCompatibilites,
+  compatibilitesVersCases,
+  creerCases,
+  CRITERES,
+} from './compatibilites';
 import { FORMAT_ID, obligatoire, prixEnEuros } from './validateurs';
 
 // Noms des champs du formulaire, dans l'ordre de la page (sert à placer le focus).
@@ -74,6 +79,8 @@ const CHAMPS_API = new Map<string, Champ>([
 
 const MESSAGE_API_INJOIGNABLE =
   "Impossible de joindre l'API. Vérifiez qu'elle est démarrée, puis réessayez.";
+const MESSAGE_CHARGEMENT_IMPOSSIBLE =
+  "Impossible de joindre l'API. Vérifiez qu'elle est démarrée, puis rechargez la page.";
 
 @Component({
   // RouterLink : la directive routerLink, pour le lien « Annuler ».
@@ -82,7 +89,9 @@ const MESSAGE_API_INJOIGNABLE =
   styleUrl: './formulaire-piece.css',
   templateUrl: './formulaire-piece.html',
 })
-export class FormulairePiece {
+// Un seul composant pour deux pages : /pieces/nouvelle (création) et /pieces/:id/modifier.
+// « implements OnInit » : la classe s'engage à fournir ngOnInit (voir plus bas).
+export class FormulairePiece implements OnInit {
   private readonly piecesService = inject(PiecesService);
   private readonly router = inject(Router);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -111,10 +120,61 @@ export class FormulairePiece {
     vitesses: creerCases(VITESSES.map(String)),
   });
 
+  // Valeur de :id dans l'URL /pieces/:id/modifier, transmise par le routeur
+  // (withComponentInputBinding, comme ?session= pour la page de connexion).
+  // Absente sur /pieces/nouvelle : le formulaire est alors en mode création.
+  readonly id = input<string>();
+  protected readonly modification = computed(() => this.id() !== undefined);
+
+  // Modification : chargement de la pièce, puis son nom (pour le titre) ou l'erreur.
+  protected readonly chargement = signal(false);
+  protected readonly erreurChargement = signal<string | null>(null);
+  private readonly nomInitial = signal<string | null>(null);
+
+  protected readonly titre = computed(() => {
+    if (!this.modification()) return 'Ajouter une pièce';
+    const nom = this.nomInitial();
+    return nom === null ? 'Modifier une pièce' : `Modifier la pièce « ${nom} »`;
+  });
+
   protected readonly envoiEnCours = signal(false);
   protected readonly erreurGenerale = signal<string | null>(null);
   // Messages de l'API qui ne correspondent à aucun champ du formulaire : affichés en haut.
   protected readonly detailsNonPlaces = signal<string[]>([]);
+
+  // ngOnInit : appelé une fois par Angular, juste après que les inputs ont reçu leur valeur.
+  // Dans le constructeur, id() serait encore vide : le routeur ne l'a pas encore transmis.
+  ngOnInit(): void {
+    const id = this.id();
+    if (id === undefined) return; // création : rien à charger
+
+    this.chargement.set(true);
+    this.piecesService.trouver(id).subscribe({
+      next: (piece) => {
+        this.remplir(piece);
+        this.chargement.set(false);
+      },
+      // 404 : l'API répond « Aucune pièce avec l'identifiant « … ». »
+      error: (erreur: unknown) => {
+        this.erreurChargement.set(messageErreur(erreur, MESSAGE_CHARGEMENT_IMPOSSIBLE));
+        this.chargement.set(false);
+      },
+    });
+  }
+
+  // Remplit le formulaire avec la pièce chargée.
+  // setValue exige une valeur pour chaque champ : TypeScript signale tout oubli.
+  private remplir(piece: Piece): void {
+    this.nomInitial.set(piece.nom);
+    this.formulaire.setValue({
+      id: piece.id,
+      nom: piece.nom,
+      categorie: piece.categorie,
+      prix: centimesVersEuros(piece.prixCentimes),
+      description: piece.description,
+      ...compatibilitesVersCases(piece.compatibilites),
+    });
+  }
 
   // Message à afficher sous le champ, ou null. Comme pour la connexion, seulement une fois
   // le champ touché. Une erreur de l'API (clé « api ») passe avant celles de l'interface.
@@ -164,7 +224,12 @@ export class FormulairePiece {
     this.detailsNonPlaces.set([]);
     this.envoiEnCours.set(true);
 
-    this.piecesService.creer(piece).subscribe({
+    // Même pièce, même traitement des erreurs : seule la requête change.
+    // En modification, une 404 (pièce supprimée entre-temps) s'affiche en haut du formulaire.
+    const requete = this.modification()
+      ? this.piecesService.modifier(piece)
+      : this.piecesService.creer(piece);
+    requete.subscribe({
       next: () => void this.router.navigateByUrl('/'),
       error: (erreur: unknown) => this.afficherErreurApi(erreur),
     });

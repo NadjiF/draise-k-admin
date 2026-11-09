@@ -79,3 +79,22 @@ export function casesVersCompatibilites(cases: ValeursCases): Compatibilites {
 
   return compatibilites;
 }
+
+// Compatibilités d'une pièce → valeurs des cases, pour remplir le formulaire en modification.
+// Chaque groupe reçoit toutes ses cases (cochée ou non) : setValue exige la valeur de chaque champ.
+export function compatibilitesVersCases(compatibilites: Compatibilites): ValeursCases {
+  return {
+    taillesRoue: casesCochees(TAILLES_ROUE, compatibilites.taillesRoue),
+    typesFrein: casesCochees(TYPES_FREIN, compatibilites.typesFrein),
+    vitesses: casesCochees(VITESSES.map(String), compatibilites.vitesses?.map(String)),
+  };
+}
+
+// { "26": false, "29": true, … } : true pour chaque clé présente dans cochees.
+// Un critère absent (undefined) donne un groupe entièrement décoché.
+function casesCochees(
+  cles: readonly string[],
+  cochees: readonly string[] = [],
+): Record<string, boolean> {
+  return Object.fromEntries(cles.map((cle) => [cle, cochees.includes(cle)]));
+}

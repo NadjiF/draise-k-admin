@@ -1,4 +1,10 @@
-import { casesVersCompatibilites, creerCases, CRITERES, ValeursCases } from './compatibilites';
+import {
+  casesVersCompatibilites,
+  compatibilitesVersCases,
+  creerCases,
+  CRITERES,
+  ValeursCases,
+} from './compatibilites';
 
 // Valeurs de cases où seules les clés données sont cochées.
 function cochees(taillesRoue: string[], typesFrein: string[], vitesses: string[]): ValeursCases {
@@ -56,5 +62,36 @@ describe('casesVersCompatibilites', () => {
     const cases = cochees(['29'], [], []);
     cases.taillesRoue['26'] = false;
     expect(casesVersCompatibilites(cases)).toEqual({ taillesRoue: ['29'] });
+  });
+});
+
+describe('compatibilitesVersCases', () => {
+  it('coche les cases des valeurs de la pièce, et donne toutes les cases de chaque groupe', () => {
+    const cases = compatibilitesVersCases({ taillesRoue: ['29', '700c'], vitesses: [11] });
+
+    expect(cases.taillesRoue).toEqual({
+      '20': false,
+      '24': false,
+      '26': false,
+      '27.5': false,
+      '29': true,
+      '700c': true,
+    });
+    // Critère absent : tout le groupe est décoché.
+    expect(Object.values(cases.typesFrein)).toEqual([false, false, false, false]);
+    expect(Object.keys(cases.vitesses).length).toBe(13);
+    expect(Object.entries(cases.vitesses).filter(([, cochee]) => cochee)).toEqual([['11', true]]);
+  });
+
+  it('retrouve les compatibilités de départ après un aller-retour', () => {
+    const compatibilites = {
+      taillesRoue: ['26' as const, '27.5' as const],
+      typesFrein: ['etrier' as const],
+      vitesses: [1, 9, 13],
+    };
+    expect(casesVersCompatibilites(compatibilitesVersCases(compatibilites))).toEqual(
+      compatibilites,
+    );
+    expect(casesVersCompatibilites(compatibilitesVersCases({}))).toEqual({});
   });
 });

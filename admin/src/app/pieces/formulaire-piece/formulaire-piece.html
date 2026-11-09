@@ -1,156 +1,176 @@
-<h1>Ajouter une pièce</h1>
+<h1>{{ titre() }}</h1>
 
-<!-- Les id des champs sont préfixés par « champ- » (un élément d'id « id » prêterait à confusion). -->
-<form [formGroup]="formulaire" (ngSubmit)="envoyer()">
-  @if (erreurGenerale(); as erreur) {
-    <div role="alert" class="erreur">
-      <p>{{ erreur }}</p>
-      @if (detailsNonPlaces().length > 0) {
-        <ul>
-          @for (detail of detailsNonPlaces(); track $index) {
-            <li>{{ detail }}</li>
-          }
-        </ul>
-      }
-    </div>
-  }
-
-  <div class="champ">
-    <label for="champ-id">Identifiant</label>
-    <p id="champ-id-aide" class="aide">
-      Identifiant unique, utilisable dans une adresse web : minuscules sans accent, chiffres et
-      tirets (ex. chaine-11v). Il ne pourra plus être modifié.
-    </p>
-    <!-- spellcheck="false" : pas de soulignement des « fautes » dans un identifiant. -->
-    <input
-      id="champ-id"
-      type="text"
-      formControlName="id"
-      autocomplete="off"
-      spellcheck="false"
-      [attr.aria-invalid]="message('id') !== null"
-      [attr.aria-describedby]="descriptions('id')"
-    />
-    <!-- « as » donne un nom au résultat de message('id'), pour ne pas l'appeler deux fois. -->
-    @if (message('id'); as message) {
-      <p id="champ-id-erreur" class="message-champ">{{ message }}</p>
+@if (chargement()) {
+  <p role="status">Chargement de la pièce…</p>
+} @else if (erreurChargement(); as erreur) {
+  <p role="alert" class="erreur">{{ erreur }}</p>
+  <p><a routerLink="/">Retour à la liste des pièces</a></p>
+} @else {
+  <!-- Les id des champs sont préfixés par « champ- » (un élément d'id « id » prêterait à confusion). -->
+  <form [formGroup]="formulaire" (ngSubmit)="envoyer()">
+    @if (erreurGenerale(); as erreur) {
+      <div role="alert" class="erreur">
+        <p>{{ erreur }}</p>
+        @if (detailsNonPlaces().length > 0) {
+          <ul>
+            @for (detail of detailsNonPlaces(); track $index) {
+              <li>{{ detail }}</li>
+            }
+          </ul>
+        }
+      </div>
     }
-  </div>
 
-  <div class="champ">
-    <label for="champ-nom">Nom</label>
-    <input
-      id="champ-nom"
-      type="text"
-      formControlName="nom"
-      autocomplete="off"
-      [attr.aria-invalid]="message('nom') !== null"
-      [attr.aria-describedby]="descriptions('nom')"
-    />
-    @if (message('nom'); as message) {
-      <p id="champ-nom-erreur" class="message-champ">{{ message }}</p>
-    }
-  </div>
-
-  <div class="champ">
-    <label for="champ-categorie">Catégorie</label>
-    <select
-      id="champ-categorie"
-      formControlName="categorie"
-      [attr.aria-invalid]="message('categorie') !== null"
-      [attr.aria-describedby]="descriptions('categorie')"
-    >
-      <option value="">Choisir une catégorie</option>
-      @for (categorie of categories; track categorie) {
-        <option [value]="categorie">{{ libellesCategories[categorie] }}</option>
-      }
-    </select>
-    @if (message('categorie'); as message) {
-      <p id="champ-categorie-erreur" class="message-champ">{{ message }}</p>
-    }
-  </div>
-
-  <div class="champ">
-    <label for="champ-prix">Prix TTC</label>
-    <p id="champ-prix-aide" class="aide">En euros, par exemple 12,90.</p>
-    <!-- type="text" et non "number" (voir pieces/prix.ts) ; inputmode="decimal" affiche
-         quand même le pavé numérique sur téléphone. Le « € » est décoratif : l'aide le dit déjà. -->
-    <div class="avec-unite">
+    <div class="champ">
+      <label for="champ-id">Identifiant</label>
+      <p id="champ-id-aide" class="aide">
+        @if (modification()) {
+          L'identifiant d'une pièce ne peut pas être modifié.
+        } @else {
+          Identifiant unique, utilisable dans une adresse web : minuscules sans accent, chiffres et
+          tirets (ex. chaine-11v). Il ne pourra plus être modifié.
+        }
+      </p>
+      <!-- spellcheck="false" : pas de soulignement des « fautes » dans un identifiant.
+         readonly en modification (l'API refuse de changer l'id) : le champ reste lisible et
+         accessible au clavier, et le lecteur d'écran l'annonce « lecture seule ». -->
       <input
-        id="champ-prix"
+        id="champ-id"
         type="text"
-        inputmode="decimal"
-        formControlName="prix"
+        formControlName="id"
         autocomplete="off"
-        [attr.aria-invalid]="message('prix') !== null"
-        [attr.aria-describedby]="descriptions('prix')"
+        spellcheck="false"
+        [readonly]="modification()"
+        [attr.aria-invalid]="message('id') !== null"
+        [attr.aria-describedby]="descriptions('id')"
       />
-      <span aria-hidden="true">€</span>
+      <!-- « as » donne un nom au résultat de message('id'), pour ne pas l'appeler deux fois. -->
+      @if (message('id'); as message) {
+        <p id="champ-id-erreur" class="message-champ">{{ message }}</p>
+      }
     </div>
-    @if (message('prix'); as message) {
-      <p id="champ-prix-erreur" class="message-champ">{{ message }}</p>
-    }
-  </div>
 
-  <div class="champ">
-    <label for="champ-description">Description (facultative)</label>
-    <textarea
-      id="champ-description"
-      formControlName="description"
-      rows="4"
-      [attr.aria-invalid]="message('description') !== null"
-      [attr.aria-describedby]="descriptions('description')"
-    ></textarea>
-    @if (message('description'); as message) {
-      <p id="champ-description-erreur" class="message-champ">{{ message }}</p>
-    }
-  </div>
+    <div class="champ">
+      <label for="champ-nom">Nom</label>
+      <input
+        id="champ-nom"
+        type="text"
+        formControlName="nom"
+        autocomplete="off"
+        [attr.aria-invalid]="message('nom') !== null"
+        [attr.aria-describedby]="descriptions('nom')"
+      />
+      @if (message('nom'); as message) {
+        <p id="champ-nom-erreur" class="message-champ">{{ message }}</p>
+      }
+    </div>
 
-  <!-- Compatibilités : un groupe de cases à cocher par critère.
+    <div class="champ">
+      <label for="champ-categorie">Catégorie</label>
+      <select
+        id="champ-categorie"
+        formControlName="categorie"
+        [attr.aria-invalid]="message('categorie') !== null"
+        [attr.aria-describedby]="descriptions('categorie')"
+      >
+        <option value="">Choisir une catégorie</option>
+        @for (categorie of categories; track categorie) {
+          <option [value]="categorie">{{ libellesCategories[categorie] }}</option>
+        }
+      </select>
+      @if (message('categorie'); as message) {
+        <p id="champ-categorie-erreur" class="message-champ">{{ message }}</p>
+      }
+    </div>
+
+    <div class="champ">
+      <label for="champ-prix">Prix TTC</label>
+      <p id="champ-prix-aide" class="aide">En euros, par exemple 12,90.</p>
+      <!-- type="text" et non "number" (voir pieces/prix.ts) ; inputmode="decimal" affiche
+         quand même le pavé numérique sur téléphone. Le « € » est décoratif : l'aide le dit déjà. -->
+      <div class="avec-unite">
+        <input
+          id="champ-prix"
+          type="text"
+          inputmode="decimal"
+          formControlName="prix"
+          autocomplete="off"
+          [attr.aria-invalid]="message('prix') !== null"
+          [attr.aria-describedby]="descriptions('prix')"
+        />
+        <span aria-hidden="true">€</span>
+      </div>
+      @if (message('prix'); as message) {
+        <p id="champ-prix-erreur" class="message-champ">{{ message }}</p>
+      }
+    </div>
+
+    <div class="champ">
+      <label for="champ-description">Description (facultative)</label>
+      <textarea
+        id="champ-description"
+        formControlName="description"
+        rows="4"
+        [attr.aria-invalid]="message('description') !== null"
+        [attr.aria-describedby]="descriptions('description')"
+      ></textarea>
+      @if (message('description'); as message) {
+        <p id="champ-description-erreur" class="message-champ">{{ message }}</p>
+      }
+    </div>
+
+    <!-- Compatibilités : un groupe de cases à cocher par critère.
        <fieldset> regroupe les cases et <legend> leur donne un titre commun : le lecteur d'écran
        annonce « Tailles de roue, groupe » avant les cases. -->
-  <section class="compatibilites" aria-labelledby="titre-compatibilites">
-    <h2 id="titre-compatibilites">Compatibilités</h2>
+    <section class="compatibilites" aria-labelledby="titre-compatibilites">
+      <h2 id="titre-compatibilites">Compatibilités</h2>
 
-    @for (critere of criteres; track critere.champ) {
-      <!-- [formGroupName] relie ce bloc au groupe de cases du même nom dans le formulaire ;
+      @for (critere of criteres; track critere.champ) {
+        <!-- [formGroupName] relie ce bloc au groupe de cases du même nom dans le formulaire ;
            à l'intérieur, formControlName désigne une case de ce groupe.
            Le message d'erreur est dans la légende : les lecteurs d'écran annoncent toujours
            la légende en entrant dans le groupe, alors qu'ils ne lisent pas tous
            aria-describedby sur un fieldset. L'aide, moins importante, y reste. -->
-      <fieldset
-        [id]="'champ-' + critere.champ"
-        [formGroupName]="critere.champ"
-        [class.en-erreur]="message(critere.champ) !== null"
-        [attr.aria-describedby]="'champ-' + critere.champ + '-aide'"
-      >
-        <legend>
-          {{ critere.legende }}
-          @if (message(critere.champ); as message) {
-            <span [id]="'champ-' + critere.champ + '-erreur'" class="message-champ">{{
-              message
-            }}</span>
-          }
-        </legend>
-        <p [id]="'champ-' + critere.champ + '-aide'" class="aide">{{ critere.aide }}</p>
-        <div class="cases">
-          @for (option of critere.options; track option.cle) {
-            <!-- La case est dans son <label> : cliquer sur le texte coche aussi la case. -->
-            <label>
-              <input type="checkbox" [formControlName]="option.cle" />
-              {{ option.libelle }}
-            </label>
-          }
-        </div>
-      </fieldset>
-    }
-  </section>
+        <fieldset
+          [id]="'champ-' + critere.champ"
+          [formGroupName]="critere.champ"
+          [class.en-erreur]="message(critere.champ) !== null"
+          [attr.aria-describedby]="'champ-' + critere.champ + '-aide'"
+        >
+          <legend>
+            {{ critere.legende }}
+            @if (message(critere.champ); as message) {
+              <span [id]="'champ-' + critere.champ + '-erreur'" class="message-champ">{{
+                message
+              }}</span>
+            }
+          </legend>
+          <p [id]="'champ-' + critere.champ + '-aide'" class="aide">{{ critere.aide }}</p>
+          <div class="cases">
+            @for (option of critere.options; track option.cle) {
+              <!-- La case est dans son <label> : cliquer sur le texte coche aussi la case. -->
+              <label>
+                <input type="checkbox" [formControlName]="option.cle" />
+                {{ option.libelle }}
+              </label>
+            }
+          </div>
+        </fieldset>
+      }
+    </section>
 
-  <div class="actions">
-    <button type="submit" [disabled]="envoiEnCours()">
-      {{ envoiEnCours() ? 'Enregistrement en cours…' : 'Enregistrer la pièce' }}
-    </button>
-    <!-- routerLink : lien géré par le routeur d'Angular, sans recharger la page. -->
-    <a routerLink="/">Annuler</a>
-  </div>
-</form>
+    <div class="actions">
+      <button type="submit" [disabled]="envoiEnCours()">
+        @if (envoiEnCours()) {
+          Enregistrement en cours…
+        } @else if (modification()) {
+          Enregistrer les modifications
+        } @else {
+          Enregistrer la pièce
+        }
+      </button>
+      <!-- routerLink : lien géré par le routeur d'Angular, sans recharger la page. -->
+      <a routerLink="/">Annuler</a>
+    </div>
+  </form>
+}
