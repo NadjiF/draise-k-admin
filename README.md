@@ -124,7 +124,10 @@ cd admin
 npm test                       # en continu ; npm test -- --watch=false pour une seule exécution
 ```
 
-**CI** : à chaque push et à chaque pull request, GitHub Actions vérifie **l'API uniquement**. Il lance la vérification des types, le lint et les tests, sur une base PostgreSQL 18 démarrée pour l'occasion. Les tests et la compilation de l'interface ne sont pas encore dans la CI.
+**CI** : deux workflows GitHub Actions, avec la version de Node de `.nvmrc` :
+
+- `ci-api.yml`, à chaque push et à chaque pull request : vérification des types, lint et tests de l'API, sur une base PostgreSQL 18 démarrée pour l'occasion ;
+- `ci-admin.yml`, seulement quand `admin/` ou ce workflow change : tests de l'interface en une seule exécution, puis compilation de production. L'interface n'a pas encore de lint.
 
 ## Limites connues
 

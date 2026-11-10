@@ -1,0 +1,53 @@
+# Intégration continue de l'interface Angular : tests et compilation de production.
+# Pas de lint : l'interface n'a pas encore d'ESLint configuré.
+name: CI interface
+
+# Seulement quand l'interface ou ce workflow change : une modification de l'API seule
+# ne relance pas ces vérifications (elle a son propre workflow, ci-api.yml).
+on:
+  push:
+    paths:
+      - "admin/**"
+      - ".github/workflows/ci-admin.yml"
+  pull_request:
+    paths:
+      - "admin/**"
+      - ".github/workflows/ci-admin.yml"
+
+# Le workflow n'a besoin que de lire le dépôt.
+permissions:
+  contents: read
+
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Toutes les commandes « run » s'exécutent dans admin/
+    defaults:
+      run:
+        working-directory: admin
+
+    steps:
+      - name: Récupération du dépôt
+        uses: actions/checkout@v7
+
+      - name: Installation de Node.js
+        uses: actions/setup-node@v7
+        with:
+          # Même version que sur le poste de développement (nvm use)
+          node-version-file: .nvmrc
+          # Garde le cache npm d'une exécution à l'autre
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      # --watch=false : une seule exécution, puis fin (sinon Vitest attendrait des modifications).
+      - name: Tests
+        run: npm test -- --watch=false
+
+      # ng build compile en configuration « production » par défaut (angular.json).
+      - name: Compilation de production
+        run: npm run build
