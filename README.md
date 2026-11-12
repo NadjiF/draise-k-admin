@@ -24,6 +24,7 @@ Projet de démonstration : un seul administrateur, des données fictives, pas en
 - **Interface** : Angular 22 (signaux, formulaires réactifs), sans bibliothèque de composants.
 - **Base** : PostgreSQL dans Docker Compose.
 - **Tests** : Vitest 5, avec supertest pour l'API et jsdom pour l'interface.
+- **Lint** : ESLint 10 et typescript-eslint, avec angular-eslint pour l'interface.
 - **CI** : GitHub Actions.
 
 ## Organisation du dépôt
@@ -122,12 +123,15 @@ npm run lint
 ```bash
 cd admin
 npm test                       # en continu ; npm test -- --watch=false pour une seule exécution
+npm run lint
 ```
+
+Le lint utilise ESLint avec angular-eslint, sur le TypeScript et les gabarits HTML, y compris les règles d'accessibilité des gabarits.
 
 **CI** : deux workflows GitHub Actions, avec la version de Node de `.nvmrc` :
 
 - `ci-api.yml`, à chaque push et à chaque pull request : vérification des types, lint et tests de l'API, sur une base PostgreSQL 18 démarrée pour l'occasion ;
-- `ci-admin.yml`, seulement quand `admin/` ou ce workflow change : tests de l'interface en une seule exécution, puis compilation de production. L'interface n'a pas encore de lint.
+- `ci-admin.yml`, seulement quand `admin/`, `.nvmrc` ou ce workflow change : lint, tests de l'interface en une seule exécution, puis compilation de production.
 
 ## Limites connues
 

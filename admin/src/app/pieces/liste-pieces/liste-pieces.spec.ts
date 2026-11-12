@@ -90,7 +90,7 @@ describe('ListePieces', () => {
     expect(lignes.length).toBe(2);
 
     const cellules = [...lignes[1].querySelectorAll('th, td')].map((c) => c.textContent?.trim());
-    // Intl sépare le montant et « € » par une espace insécable ( ) : le prix ne sera
+    // Intl sépare le montant et « € » par une espace insécable (U+00A0) : le prix ne sera
     // jamais coupé en fin de ligne.
     // slice(0, 3) : la 4e cellule (« Modifier », « Supprimer ») a ses propres tests.
     expect(cellules.slice(0, 3)).toEqual(['Pneu 700x28', 'Pneus et chambres à air', '29,90 €']);

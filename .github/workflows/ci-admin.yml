@@ -1,17 +1,19 @@
-# Intégration continue de l'interface Angular : tests et compilation de production.
-# Pas de lint : l'interface n'a pas encore d'ESLint configuré.
+# Intégration continue de l'interface Angular : lint, tests et compilation de production.
 name: CI interface
 
-# Seulement quand l'interface ou ce workflow change : une modification de l'API seule
-# ne relance pas ces vérifications (elle a son propre workflow, ci-api.yml).
+# Seulement quand l'interface, la version de Node (.nvmrc) ou ce workflow change :
+# une modification de l'API seule ne relance pas ces vérifications (elle a son propre
+# workflow, ci-api.yml).
 on:
   push:
     paths:
       - "admin/**"
+      - ".nvmrc"
       - ".github/workflows/ci-admin.yml"
   pull_request:
     paths:
       - "admin/**"
+      - ".nvmrc"
       - ".github/workflows/ci-admin.yml"
 
 # Le workflow n'a besoin que de lire le dépôt.
@@ -43,6 +45,11 @@ jobs:
 
       - name: Installation des dépendances
         run: npm ci
+
+      # ESLint avec angular-eslint (admin/eslint.config.js), sur le TypeScript et les
+      # gabarits HTML, dont les règles d'accessibilité des gabarits.
+      - name: Lint
+        run: npm run lint
 
       # --watch=false : une seule exécution, puis fin (sinon Vitest attendrait des modifications).
       - name: Tests
